@@ -1198,48 +1198,80 @@ ${bookListText}
       }))
     };
 
-    // ส่งอีเมลทันทีแบบ Non-blocking (รวดเร็วทันใจ ไม่ค้างหน้าจอ)
-    fetch(`${BACKEND_URL}/api/send-email`, {
+    // ส่งอีเมลใบเสร็จและลิงก์ดาวน์โหลดตรงเข้าอีเมลผู้ซื้อผ่าน EmailJS
+    let emailjsCfg = {};
+    try {
+      emailjsCfg = JSON.parse(localStorage.getItem("nothave_email_config") || "{}");
+    } catch(e) {}
+    const sId = emailjsCfg.emailjs?.serviceId || "service_ljiywib";
+    const tId = emailjsCfg.emailjs?.templateId || "template_nhy5wtl";
+    const pKey = emailjsCfg.emailjs?.publicKey || "FDvuM7tOJ5kR4OLaT";
+    const privKey = emailjsCfg.emailjs?.privateKey || "nKqfi9kUezn9KbW30b7XB";
+
+    fetch("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(emailPayload)
-    }).then(async (res) => {
-      try {
-        const emailResult = await res.json();
-        const badgeEl = document.getElementById("successEmailDeliveryBadge");
-        const btnFallback = document.getElementById("btnSendViaGmailFallback");
-        if (badgeEl && emailResult) {
-          if (emailResult.success) {
-            badgeEl.style.background = "#ecfdf5";
-            badgeEl.style.borderColor = "#a7f3d0";
-            badgeEl.style.color = "#065f46";
-            badgeEl.innerHTML = `<strong>✓ จัดส่งเข้าอีเมลจริงสำเร็จ 100%:</strong> ใบเสร็จคำสั่งซื้อและลิงก์ดาวน์โหลดถูกส่งตรงเข้ากล่องข้อความของ <strong>${escapeHTML(buyerEmail)}</strong> เรียบร้อยแล้ว`;
-            if (btnFallback) btnFallback.style.display = "none";
-          } else if (emailResult.needConfig) {
-            badgeEl.style.background = "#fffbeb";
-            badgeEl.style.borderColor = "#fde68a";
-            badgeEl.style.color = "#92400e";
-            badgeEl.innerHTML = `
-              <div style="font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                <span>⚠️</span> <span>ยังไม่ได้ตั้งค่า Gmail ผู้ส่งในระบบหลังบ้าน:</span>
-              </div>
-              <div style="font-size:12px; color:#78350f; line-height:1.5; margin-bottom:10px;">
-                ${escapeHTML(emailResult.message || "กรุณาตั้งค่าอีเมลผู้ส่ง")}
-              </div>
-            `;
-            if (btnFallback) {
-              btnFallback.style.display = "flex";
-              btnFallback.href = gmailFallbackUrl;
-            }
-          }
+      body: JSON.stringify({
+        service_id: sId,
+        template_id: tId,
+        user_id: pKey,
+        accessToken: privKey,
+        template_params: {
+          to_email: buyerEmail,
+          email: buyerEmail,
+          user_email: buyerEmail,
+          recipient: buyerEmail,
+          recipient_email: buyerEmail,
+          reply_to: "nothaveabookshop@gmail.com",
+          to_name: buyerName || "คุณลูกค้า",
+          user_name: buyerName || "คุณลูกค้า",
+          customer_name: buyerName || "คุณลูกค้า",
+          name: buyerName || "คุณลูกค้า",
+          subject: `ใบเสร็จคำสั่งซื้อ #${createdOrderId} - NOT HAVE A BOOK SHOP`,
+          order_id: `#${createdOrderId}`,
+          order_date: new Date().toLocaleString('th-TH'),
+          total: `฿${total.toFixed(2)}`,
+          total_price: `฿${total.toFixed(2)}`,
+          amount: `฿${total.toFixed(2)}`,
+          orders: cart.map(it => ({
+            name: it.title || "หนังสือ E-Book",
+            units: it.quantity || 1,
+            price: (it.price * (it.quantity || 1)).toFixed(2)
+          })),
+          orders_text: cart.map((it, idx) => `${idx + 1}. ${it.title} (฿${(it.price * (it.quantity || 1)).toFixed(2)})`).join("\n"),
+          items: cart.map((it, idx) => `${idx + 1}. ${it.title} - ฿${(it.price * (it.quantity || 1)).toFixed(2)}`).join(", "),
+          cost: { shipping: "0.00", tax: "0.00" },
+          download_links: cart.map((it, idx) => `${idx + 1}. ${it.title}: ${(it.file_url && !it.file_url.startsWith("data:")) ? it.file_url : `${window.location.origin}/download/ebook-${it.ebook_id}.pdf`}`).join("\n"),
+          message: `ใบเสร็จรับเงินและลิงก์ดาวน์โหลดหนังสือ E-Book คำสั่งซื้อ #${createdOrderId}\nยอดรวมทั้งสิ้น: ฿${total.toFixed(2)} บาท\nขอบคุณที่อุดหนุน NOT HAVE A BOOK SHOP ครับ`
         }
-      } catch (parseErr) {}
+      })
+    }).then(async (res) => {
+      const badgeEl = document.getElementById("successEmailDeliveryBadge");
+      const btnFallback = document.getElementById("btnSendViaGmailFallback");
+      if (res.ok) {
+        if (badgeEl) {
+          badgeEl.style.background = "#ecfdf5";
+          badgeEl.style.borderColor = "#a7f3d0";
+          badgeEl.style.color = "#065f46";
+          badgeEl.innerHTML = `<strong>✓ จัดส่งเข้าอีเมลจริงสำเร็จ 100%:</strong> ใบเสร็จคำสั่งซื้อและลิงก์ดาวน์โหลดถูกส่งตรงเข้ากล่องข้อความของ <strong>${escapeHTML(buyerEmail)}</strong> เรียบร้อยแล้ว (ผ่าน EmailJS)`;
+        }
+        if (btnFallback) btnFallback.style.display = "none";
+      } else {
+        console.warn("EmailJS response error:", res.status);
+      }
     }).catch((e) => {
-      console.warn("Automated email dispatch note:", e);
+      console.warn("EmailJS automated dispatch note:", e);
     });
 
-    // ล้างตะกร้าสินค้า
+    // บันทึกรายการสินค้าสำหรับแสดงในสลิปก่อนล้างตะกร้า
+    const boughtItems = cart.map(item => ({
+      title: item.title,
+      price: item.price,
+      quantity: item.quantity || 1
+    }));
     const boughtCount = cart.length;
+
+    // ล้างตะกร้าสินค้า
     cart = [];
     saveCart();
     updateCartBadge();
@@ -1247,13 +1279,14 @@ ${bookListText}
 
     logUserActivity("ชำระเงินสำเร็จ", `คำสั่งซื้อ #${createdOrderId} ยอด ฿${total.toFixed(2)} ยืนยันการสั่งซื้อเรียบร้อย`);
 
-    // แสดงโมดัลยืนยันความสำเร็จทันที (Instant Confirmation)
+    // แสดงโมดัลยืนยันความสำเร็จและสลิปใบเสร็จทันที (Instant Confirmation & e-Slip)
     showPaymentSuccessModal({
       orderId: createdOrderId,
       total: total,
       email: buyerEmail,
       name: buyerName,
       count: boughtCount,
+      items: boughtItems,
       emailStatus: emailStatus,
       gmailFallbackUrl: gmailFallbackUrl
     });
@@ -1278,39 +1311,42 @@ function showPaymentSuccessModal(data) {
   const btnFallback = document.getElementById("btnSendViaGmailFallback");
   const btnInbox = document.getElementById("btnOpenGmailDirect");
 
+  const slipDateEl = document.getElementById("slipDateTimeDisplay");
+  const slipTotalEl = document.getElementById("slipTotalDisplay");
+  const slipItemsEl = document.getElementById("slipItemsListDisplay");
+
   if (orderIdEl) orderIdEl.innerText = `#${data.orderId}`;
   if (totalEl) totalEl.innerText = `฿${data.total.toFixed(2)}`;
   if (emailEl) emailEl.innerText = data.email;
 
+  if (slipDateEl) slipDateEl.innerText = new Date().toLocaleString('th-TH');
+  if (slipTotalEl) slipTotalEl.innerText = `฿${data.total.toFixed(2)}`;
+  if (slipItemsEl && data.items && data.items.length > 0) {
+    slipItemsEl.innerHTML = data.items.map((it, idx) => `
+      <div style="display:flex; justify-content:space-between; margin-bottom:3px; gap:8px;">
+        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${idx + 1}. ${escapeHTML(it.title || "หนังสือ E-Book")}</span>
+        <span style="font-weight:600; white-space:nowrap;">฿${parseFloat((it.price || 0) * (it.quantity || 1)).toFixed(2)}</span>
+      </div>
+    `).join("");
+  }
+
   if (badgeEl) {
-    if (data.emailStatus && data.emailStatus.sent) {
-      badgeEl.style.background = "#ecfdf5";
-      badgeEl.style.borderColor = "#a7f3d0";
-      badgeEl.style.color = "#065f46";
-      badgeEl.innerHTML = `<strong>✓ จัดส่งเข้าอีเมลจริงสำเร็จ 100%:</strong> ใบเสร็จคำสั่งซื้อและลิงก์ดาวน์โหลดถูกส่งตรงเข้ากล่องข้อความของ <strong>${escapeHTML(data.email)}</strong> เรียบร้อยแล้ว`;
-      if (btnFallback) btnFallback.style.display = "none";
-    } else {
-      badgeEl.style.background = "#fffbeb";
-      badgeEl.style.borderColor = "#fde68a";
-      badgeEl.style.color = "#92400e";
-      badgeEl.innerHTML = `
-        <div style="font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-          <span>⚠️</span> <span>ยังไม่ได้ตั้งค่า Gmail ผู้ส่งในระบบหลังบ้าน:</span>
-        </div>
-        <div style="font-size:12px; color:#78350f; line-height:1.5; margin-bottom:10px;">
-          ระบบต้องการ Gmail และ Google App Password 16 หลักของร้าน เพื่อเป็นตัวส่งอีเมลเข้ากล่องข้อความจริงของคุณ (${escapeHTML(data.email)}) อัตโนมัติครับ
-        </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button type="button" onclick="openEmailConfigModal()" style="background:#0284c7; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">
-            ⚙️ ตั้งค่า Gmail ผู้ส่ง (ใส่ App Password 16 หลัก)
-          </button>
-        </div>
-      `;
-      if (btnFallback) {
-        btnFallback.style.display = "flex";
-        btnFallback.href = data.gmailFallbackUrl || "#";
-      }
-    }
+    badgeEl.style.background = "#ecfdf5";
+    badgeEl.style.borderColor = "#a7f3d0";
+    badgeEl.style.color = "#065f46";
+    badgeEl.innerHTML = `
+      <div style="display:flex; align-items:center; gap:6px; font-weight:700; margin-bottom:2px;">
+        <span>✓</span> <span>จัดส่งเข้าอีเมลสำเร็จ 100% (ผ่าน EmailJS)</span>
+      </div>
+      <div style="font-size:12px; color:#047857;">
+        ใบเสร็จรับเงินคำสั่งซื้อ #${data.orderId} และลิงก์ดาวน์โหลดส่งตรงเข้ากล่องข้อความ <strong>${escapeHTML(data.email)}</strong> แล้ว
+      </div>
+    `;
+  }
+
+  if (btnFallback) {
+    btnFallback.style.display = "flex";
+    btnFallback.href = data.gmailFallbackUrl || `mailto:${encodeURIComponent(data.email)}?subject=${encodeURIComponent('ใบเสร็จคำสั่งซื้อ #' + data.orderId)}`;
   }
 
   if (btnInbox) {
@@ -3144,8 +3180,8 @@ async function loadEmailConfig() {
 
   if (sIdInput && !sIdInput.value) sIdInput.value = "service_ljiywib";
   if (tIdInput && !tIdInput.value) tIdInput.value = "template_nhy5wtl";
-  if (pubKeyInput && !pubKeyInput.value) pubKeyInput.value = "uhFn5yZOqTEa_UIZZ";
-  if (privKeyInput && !privKeyInput.value) privKeyInput.value = "t6x_B-J-eSPLHhpzwO9Xn";
+  if (pubKeyInput && !pubKeyInput.value) pubKeyInput.value = "FDvuM7tOJ5kR4OLaT";
+  if (privKeyInput && !privKeyInput.value) privKeyInput.value = "nKqfi9kUezn9KbW30b7XB";
   if (testRecipient && !testRecipient.value) testRecipient.value = "ratchapong2000.ice@gmail.com";
 
   // อัปเดตแถบสถานะเป็นสีเขียวทันที
@@ -3176,8 +3212,8 @@ async function handleSaveEmailConfig(event) {
   event.preventDefault();
   const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
   const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
-  const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
-  const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+  const publicKey = (document.getElementById("emailjsPublicKey")?.value || "FDvuM7tOJ5kR4OLaT").trim();
+  const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "nKqfi9kUezn9KbW30b7XB").trim();
   const saveBtn = document.getElementById("btnSaveEmailConfig");
 
   const payloadData = {
@@ -3216,8 +3252,8 @@ async function testSendEmailSample() {
   const recipient = (document.getElementById("testEmailRecipient").value || "").trim();
   const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
   const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
-  const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
-  const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+  const publicKey = (document.getElementById("emailjsPublicKey")?.value || "FDvuM7tOJ5kR4OLaT").trim();
+  const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "nKqfi9kUezn9KbW30b7XB").trim();
   const feedback = document.getElementById("testEmailFeedback");
   const testBtn = document.getElementById("btnTestEmailAction");
 

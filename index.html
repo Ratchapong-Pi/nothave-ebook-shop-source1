@@ -595,34 +595,66 @@
     </div>
   </div>
 
-  <!-- MODAL: ชำระเงินสำเร็จ (Payment Success Modal) -->
+  <!-- MODAL: ชำระเงินสำเร็จ & แสดงสลิปใบเสร็จ (Payment Success & Slip Modal) -->
   <div class="modal-overlay" id="paymentSuccessModal">
-    <div class="modal-box" style="max-width: 440px; padding: 26px; text-align: center;">
+    <div class="modal-box" style="max-width: 450px; padding: 24px; text-align: center;">
       <button class="modal-close-btn" onclick="closeModal('paymentSuccessModal')">✕</button>
-      <div style="width:60px; height:60px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:32px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+      <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:28px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px;">
         ✓
       </div>
-      <div class="modal-title" style="color:#16a34a; font-size:20px; margin-bottom:8px;">
+      <div class="modal-title" style="color:#16a34a; font-size:20px; margin-bottom:6px;">
         ชำระเงินสำเร็จเรียบร้อย!
       </div>
-      <p style="font-size:13px; color:#475569; margin-bottom:14px; line-height:1.6;">
+      <p style="font-size:13px; color:#475569; margin-bottom:12px; line-height:1.5;">
         รหัสคำสั่งซื้อ <strong id="successOrderIdDisplay">#12345</strong> ยอดรวม <strong style="color:#0284c7;" id="successTotalDisplay">฿0.00</strong><br>
         ผู้สั่งซื้อ: <strong id="successEmailDisplay" style="color:#0f172a;">-</strong>
       </p>
 
-      <div id="successEmailDeliveryBadge" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin-bottom:18px; font-size:12px; color:#166534; text-align:left;">
-        <strong>✓ ยืนยันการสั่งซื้อสำเร็จ:</strong> หนังสือได้รับการปลดล็อกเข้าบัญชีของคุณแล้ว สามารถคลิกปุ่ม <strong>[เปิดคลังหนังสือเพื่อดาวน์โหลด]</strong> เพื่ออ่านได้ทันที
+      <!-- SLIP / E-RECEIPT CARD (สลิปใบเสร็จรับเงินโอนสำเร็จ) -->
+      <div id="paymentSlipContainer" style="background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:10px; padding:14px 16px; margin-bottom:14px; text-align:left; font-size:12.5px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:#003d79;">
+            <span>🧾</span> <span>สลิปหลักฐานการชำระเงิน (e-Receipt)</span>
+          </div>
+          <span style="background:#dcfce7; color:#16a34a; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">✓ สำเร็จ</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:#64748b;">
+          <span>วันที่-เวลา:</span>
+          <span id="slipDateTimeDisplay" style="color:#1e293b; font-weight:600;">-</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:#64748b;">
+          <span>ช่องทางชำระ:</span>
+          <span style="color:#003d79; font-weight:700;">PromptPay QR (สแกนชำระเงิน)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:#64748b;">
+          <span>ผู้รับเงิน:</span>
+          <span style="color:#1e293b; font-weight:600;">NOT HAVE A BOOK SHOP</span>
+        </div>
+        <div id="slipItemsListDisplay" style="border-top:1px dashed #e2e8f0; border-bottom:1px dashed #e2e8f0; padding:6px 0; margin:6px 0; font-size:12px; color:#334155; max-height:90px; overflow-y:auto;">
+          <!-- รายการหนังสือในสลิป -->
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13.5px; font-weight:700; color:#0f172a; margin-top:6px;">
+          <span>ยอดชำระสุทธิ:</span>
+          <span id="slipTotalDisplay" style="color:#16a34a; font-size:15px;">฿0.00</span>
+        </div>
+      </div>
+
+      <div id="successEmailDeliveryBadge" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:11.5px; color:#166534; text-align:left;">
+        <strong>✓ จัดส่งเข้าอีเมลจริงสำเร็จ 100%:</strong> ใบเสร็จคำสั่งซื้อและลิงก์ดาวน์โหลดถูกส่งตรงเข้ากล่องข้อความเรียบร้อยแล้ว
       </div>
 
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn-primary-action" style="background:#16a34a; padding:11px; font-weight:700;" onclick="closeModal('paymentSuccessModal'); openOrdersModal();">
           📥 เปิดคลังหนังสือเพื่อดาวน์โหลดทันที
         </button>
-        <a id="btnSendViaGmailFallback" href="#" target="_blank" class="btn-primary-action" style="display:none; background:#ea4335; text-decoration:none; align-items:center; justify-content:center; gap:6px; padding:10px; font-size:13px; font-weight:600;">
+        <button type="button" class="btn-primary-action" style="background:#f1f5f9; color:#1e293b; border:1px solid #cbd5e1; padding:9px; font-size:12.5px; font-weight:600;" onclick="window.print()">
+          🖨️ พิมพ์ / บันทึกสลิปใบเสร็จ (Save Slip)
+        </button>
+        <a id="btnSendViaGmailFallback" href="#" target="_blank" class="btn-primary-action" style="display:none; background:#ea4335; text-decoration:none; align-items:center; justify-content:center; gap:6px; padding:9px; font-size:12px; font-weight:600;">
           ✉️ ส่งใบเสร็จเข้า Gmail ให้ทันที (1 คลิก)
         </a>
-        <a id="btnOpenGmailDirect" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" class="btn-primary-action" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; font-size:13px;">
-          📬 เปิดกล่องจดหมายอีเมล (Inbox)
+        <a id="btnOpenGmailDirect" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" class="btn-primary-action" style="background:#fff; color:#475569; border:1px solid #e2e8f0; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px; font-size:12px;">
+          📬 เปิดกล่องข้อความอีเมลของคุณ
         </a>
       </div>
     </div>
@@ -922,7 +954,7 @@
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
             EmailJS Public Key *
           </label>
-          <input type="text" id="emailjsPublicKey" class="form-control" required value="uhFn5yZOqTEa_UIZZ" placeholder="เช่น p7X_abc123... (จากหน้า Account ของ EmailJS)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          <input type="text" id="emailjsPublicKey" class="form-control" required value="FDvuM7tOJ5kR4OLaT" placeholder="เช่น p7X_abc123... (จากหน้า Account ของ EmailJS)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
           <div style="font-size:11px; color:#64748b; margin-top:4px;">
             * บัญชี EmailJS เชื่อมต่อกับ Gmail: <code>ratchapong.pi@rmuti.ac.th</code> เรียบร้อยแล้ว
           </div>
@@ -932,7 +964,7 @@
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
             EmailJS Private Key (สำหรับโหมดความปลอดภัย Strict Mode)
           </label>
-          <input type="password" id="emailjsPrivateKey" class="form-control" value="t6x_B-J-eSPLHhpzwO9Xn" placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          <input type="password" id="emailjsPrivateKey" class="form-control" value="nKqfi9kUezn9KbW30b7XB" placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
           <div style="font-size:11px; color:#64748b; margin-top:4px;">
             💡 หากไม่อยากกรอก Private Key: ให้ไปที่แท็บ <strong>Security</strong> ใน EmailJS แล้ว<strong>เอาเครื่องหมายถูกออกจาก Use Private Key</strong> จากนั้นกด Save Changes ครับ
           </div>

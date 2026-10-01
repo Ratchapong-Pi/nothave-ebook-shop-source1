@@ -1162,7 +1162,7 @@
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
             EmailJS Public Key *
           </label>
-          <input type="text" id="emailjsPublicKey" required value="uhFn5yZOqTEa_UIZZ"
+          <input type="text" id="emailjsPublicKey" required value="FDvuM7tOJ5kR4OLaT"
             placeholder="เช่น p7X_abc123... (ดูจากเมนู Account ใน EmailJS)"
             style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
           <div style="font-size:11px; color:#64748b; margin-top:4px;">
@@ -1174,7 +1174,7 @@
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
             EmailJS Private Key (สำหรับโหมดความปลอดภัย Strict Mode)
           </label>
-          <input type="password" id="emailjsPrivateKey" value="t6x_B-J-eSPLHhpzwO9Xn"
+          <input type="password" id="emailjsPrivateKey" value="nKqfi9kUezn9KbW30b7XB"
             placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)"
             style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
           <div style="font-size:11px; color:#64748b; margin-top:4px;">
@@ -3736,8 +3736,8 @@
 
       if (sIdInput && !sIdInput.value) sIdInput.value = "service_ljiywib";
       if (tIdInput && !tIdInput.value) tIdInput.value = "template_nhy5wtl";
-      if (pubKeyInput && !pubKeyInput.value) pubKeyInput.value = "uhFn5yZOqTEa_UIZZ";
-      if (privKeyInput && !privKeyInput.value) privKeyInput.value = "t6x_B-J-eSPLHhpzwO9Xn";
+      if (pubKeyInput && !pubKeyInput.value) pubKeyInput.value = "FDvuM7tOJ5kR4OLaT";
+      if (privKeyInput && !privKeyInput.value) privKeyInput.value = "nKqfi9kUezn9KbW30b7XB";
       if (testRecipient && !testRecipient.value) testRecipient.value = "ratchapong2000.ice@gmail.com";
 
       // อัปเดตแถบสถานะเป็นสีเขียวทันที
@@ -3768,8 +3768,8 @@
       event.preventDefault();
       const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
       const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
-      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
-      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "FDvuM7tOJ5kR4OLaT").trim();
+      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "nKqfi9kUezn9KbW30b7XB").trim();
       const saveBtn = document.getElementById("btnSaveEmailConfig");
 
       const payloadData = {
@@ -3808,8 +3808,8 @@
       const recipient = (document.getElementById("testEmailRecipient").value || "").trim();
       const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
       const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
-      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
-      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "FDvuM7tOJ5kR4OLaT").trim();
+      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "nKqfi9kUezn9KbW30b7XB").trim();
       const feedback = document.getElementById("testEmailFeedback");
       const testBtn = document.getElementById("btnTestEmailAction");
 
