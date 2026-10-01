@@ -6,5 +6,5 @@ echo   Local Web Server is starting on http://localhost:8080/
 echo ===================================================
 echo.
 cd /d "%~dp0"
-node server.js
+node local_server.js
 pause
