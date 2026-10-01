@@ -1,0 +1,11 @@
+{
+  "provider": "emailjs",
+  "emailjs": {
+    "serviceId": "service_ljiywib",
+    "templateId": "template_nhy5wtl",
+    "publicKey": "uhFn5yZOqTEa_UIZZ",
+    "privateKey": "t6x_B-J-eSPLHhpzwO9Xn"
+  },
+  "email": "ratchapong.pi@rmuti.ac.th",
+  "senderName": "NOT HAVE A BOOK SHOP (บักบ่ได้หนังสือ)"
+}

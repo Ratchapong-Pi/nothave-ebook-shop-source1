@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สตูดิโอนักเขียน (Writer Studio) | NOT HAVE A BOOK SHOP</title>
+  <!-- Google Fonts: Prompt & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- ROUTE GUARD & ROLE-BASED ACCESS CONTROL -->
+  <script>
+    (function guardWriterPage() {
+      try {
+        const storedUser = localStorage.getItem("nothave_user");
+        if (!storedUser) {
+          window.location.replace("index.html?auth_error=unauthorized");
+          return;
+        }
+        const user = JSON.parse(storedUser);
+        // อนุญาตทั้ง Writer (role_id: 3) และ Admin (role_id: 2)
+        if (!user || (user.role_id !== 3 && user.role_id !== 2)) {
+          window.location.replace("index.html?auth_error=writer_only");
+          return;
+        }
+      } catch (err) {
+        window.location.replace("index.html");
+      }
+    })();
+  </script>
+
+  <style>
+    :root {
+      --sidebar-bg: #1e1b4b; /* Deep Indigo / Purple */
+      --sidebar-hover: #312e81;
+      --sidebar-text: #c7d2fe;
+      --sidebar-active: #a78bfa;
+      --main-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 8px;
+      --font: 'Prompt', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--main-bg);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .writer-sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #312e81;
+    }
+
+    .sidebar-brand {
+      padding: 20px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #312e81;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(124, 58, 237, 0.4);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: #a78bfa;
+      font-weight: 500;
+    }
+
+    .sidebar-menu {
+      flex: 1;
+      padding: 16px 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .menu-group-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #818cf8;
+      padding: 10px 12px 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .menu-item:hover {
+      background: var(--sidebar-hover);
+      color: #fff;
+    }
+
+    .menu-item.active {
+      background: #4338ca;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(67, 56, 202, 0.4);
+    }
+
+    .menu-badge {
+      margin-left: auto;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .sidebar-user {
+      padding: 14px 16px;
+      border-top: 1px solid #312e81;
+      background: #1e1b4b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .user-details {
+      line-height: 1.2;
+    }
+
+    .user-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: #a78bfa;
+    }
+
+    .btn-logout {
+      background: none;
+      border: none;
+      color: #f87171;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* MAIN CONTENT */
+    .writer-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .writer-header {
+      height: 60px;
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .header-title strong {
+      color: #7c3aed;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+    }
+
+    .btn-primary {
+      background: #7c3aed;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+    }
+    .btn-primary:hover {
+      background: #6d28d9;
+    }
+
+    .btn-view-store {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      text-decoration: none;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+    .btn-view-store:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .writer-content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.08);
+    }
+
+    .kpi-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .kpi-info {
+      line-height: 1.3;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .kpi-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* CONTENT PANELS */
+    .content-panel {
+      display: none;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .content-panel.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 14px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TABLE */
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .custom-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    .custom-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      color: #334155;
+    }
+
+    .custom-table tr:hover td {
+      background: #faf5ff;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .badge-confirmed {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .badge-cancelled {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    /* FORM STYLES */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 13.5px;
+      font-family: inherit;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #64748b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- WRITER SIDEBAR -->
+  <aside class="writer-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">✍️</div>
+      <div>
+        <div class="brand-title">WRITER STUDIO</div>
+        <div class="brand-subtitle">บักบ่ได้หนังสือ (พอร์ทัลนักเขียน)</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <div class="menu-group-label">เมนูนักเขียน</div>
+      <a class="menu-item active" onclick="switchPanel('tabOverview', this)">
+        <span>📊</span>
+        <span>ภาพรวมสตูดิโอ (Overview)</span>
+      </a>
+      <a class="menu-item" onclick="switchPanel('tabBooks', this)">
+        <span>📚</span>
+        <span>คลังผลงานของฉัน (My Books)</span>
+        <span class="menu-badge" id="sidebarBookCount">0</span>
+      </a>
+      <a class="menu-item" onclick="openAddBookModal()">
+        <span>✨</span>
+        <span>เพิ่มผลงาน E-Book เล่มใหม่</span>
+      </a>
+
+      <div class="menu-group-label" style="margin-top:10px;">การเงิน &amp; รายงาน</div>
+      <a class="menu-item" onclick="switchPanel('tabSales', this)">
+        <span>💰</span>
+        <span>ยอดขายและคำสั่งซื้อ (Sales)</span>
+      </a>
+      <a class="menu-item" onclick="switchPanel('tabProfile', this)">
+        <span>👤</span>
+        <span>โปรไฟล์และข้อมูลรับเงิน</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebarAvatar">W</div>
+        <div class="user-details">
+          <div class="user-name" id="sidebarName">นักเขียน</div>
+          <div class="user-role" id="sidebarRoleBadge">Writer Studio</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()" title="ออกจากระบบ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        <span>ออก</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- WRITER MAIN -->
+  <main class="writer-main">
+    <header class="writer-header">
+      <div class="header-title">
+        กำลังใช้งานระบบหลังบ้านนักเขียน: <strong>Writer Studio Portal</strong>
+      </div>
+      <div class="header-actions">
+        <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; padding:5px 12px; border-radius:20px; font-weight:600;">
+          <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 0 2px rgba(16,185,129,0.3);"></span>
+          <span>Supabase Real-time: Live</span>
+        </div>
+        <button class="btn-sm btn-primary" onclick="openAddBookModal()">
+          + เพิ่มผลงานใหม่
+        </button>
+        <a href="admin.html" class="btn-sm" id="btnAdminCmsFromWriter" style="display:none; background:#0284c7; color:#fff; text-decoration:none; padding:6px 12px; border-radius:var(--radius); font-weight:600;" title="กลับไปยังระบบจัดการร้านค้า Admin CMS">
+          🛡️ แผงควบคุมแอดมิน (CMS)
+        </a>
+        <a href="index.html" class="btn-view-store">
+          สลับไปดูมุมมองลูกค้า (Storefront)
+        </a>
+      </div>
+    </header>
+
+    <div class="writer-content-area">
+
+      <!-- KPI SUMMARY METRICS -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f5f3ff; color:#7c3aed;">📚</div>
+          <div class="kpi-info">
+            <div class="kpi-label">ผลงานในสตูดิโอ</div>
+            <div class="kpi-val" id="kpiMyBooks">0 เล่ม</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#ecfdf5; color:#10b981;">฿</div>
+          <div class="kpi-info">
+            <div class="kpi-label">ยอดขายผลงานรวม</div>
+            <div class="kpi-val" id="kpiTotalEarnings">฿0.00</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#e0f2fe; color:#0284c7;">🛒</div>
+          <div class="kpi-info">
+            <div class="kpi-label">ยอดการสั่งซื้อทั้งหมด</div>
+            <div class="kpi-val" id="kpiOrderCount">0 รายการ</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fffbeb; color:#d97706;">⭐</div>
+          <div class="kpi-info">
+            <div class="kpi-label">ส่วนแบ่งรายได้นักเขียน (70%)</div>
+            <div class="kpi-val" id="kpiRoyaltyShare">฿0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 1: OVERVIEW -->
+      <div class="content-panel active" id="tabOverview">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>✨</span>
+            <span>ยินดีต้อนรับสู่ Writer Studio (สตูดิโอนักเขียน E-Book)</span>
+          </div>
+          <button class="btn-sm btn-primary" onclick="openAddBookModal()">+ ลงผลงานเรื่องแรก</button>
+        </div>
+        
+        <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:18px; margin-bottom:20px;">
+          <h4 style="color:#6d28d9; margin-bottom:6px; font-size:15px;">📌 คำแนะนำสำหรับนักเขียน:</h4>
+          <ul style="padding-left:20px; font-size:13px; color:#475569; line-height:1.7;">
+            <li>คุณสามารถเพิ่มผลงานมังงะ ไลท์โนเวล นิยาย หรืออาร์ตบุ๊ค พร้อมกำหนดราคาขายและเนื้อหาตัวอย่างได้ด้วยตนเอง</li>
+            <li>สามารถแนบไฟล์ <strong>PDF ฉบับเต็ม</strong> เพื่อให้ลูกค้านำไปดาวน์โหลดอ่านได้ทันทีหลังจากสั่งซื้อสำเร็จ</li>
+            <li>ระบบเชื่อมต่อฐานข้อมูล <strong>Supabase Real-time</strong> โดยตรง ผลงานของคุณจะปรากฏที่หน้าร้านทันทีที่บันทึกสำเร็จ</li>
+          </ul>
+        </div>
+
+        <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:12px;">ผลงานล่าสุดของคุณ</div>
+        <div id="overviewBooksList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- PANEL 2: MY BOOKS -->
+      <div class="content-panel" id="tabBooks">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>📚</span>
+            <span>คลังผลงาน E-Book ทั้งหมดของคุณ</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-sm btn-primary" onclick="openAddBookModal()">+ เพิ่มผลงานใหม่</button>
+            <button class="btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;" onclick="fetchWriterBooks()">🔄 รีเฟรชคลัง</button>
+          </div>
+        </div>
+
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width:50px;">ID</th>
+              <th style="width:60px;">ภาพปก</th>
+              <th>ชื่อเรื่อง</th>
+              <th>หมวดหมู่</th>
+              <th>ราคาขาย</th>
+              <th>ไฟล์ PDF</th>
+              <th>สถานะ</th>
+              <th style="text-align:center;">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="writerBooksTbody">
+            <tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">กำลังโหลดผลงานจากฐานข้อมูล Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PANEL 3: SALES & ORDERS -->
+      <div class="content-panel" id="tabSales">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>💰</span>
+            <span>รายงานยอดขายและคำสั่งซื้อผลงาน</span>
+          </div>
+          <button class="btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;" onclick="fetchWriterOrders()">🔄 รีเฟรชยอดขาย</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:16px;">
+            <div style="font-size:12px; color:#166534; font-weight:600;">ยอดเงินที่ยืนยันแล้วพร้อมรับโอน:</div>
+            <div style="font-size:24px; font-weight:700; color:#15803d; margin-top:4px;" id="confirmedRoyaltyVal">฿0.00</div>
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:16px;">
+            <div style="font-size:12px; color:#92400e; font-weight:600;">ยอดที่รอยืนยันสลิป/โอนเงิน:</div>
+            <div style="font-size:24px; font-weight:700; color:#b45309; margin-top:4px;" id="pendingRoyaltyVal">฿0.00</div>
+          </div>
+        </div>
+
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>วันที่สั่งซื้อ</th>
+              <th>ชื่อลูกค้า</th>
+              <th>รายการผลงานที่ซื้อ</th>
+              <th>ยอดเงิน</th>
+              <th>สถานะออเดอร์</th>
+            </tr>
+          </thead>
+          <tbody id="writerOrdersTbody">
+            <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">กำลังดึงข้อมูลออเดอร์จาก Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PANEL 4: WRITER PROFILE -->
+      <div class="content-panel" id="tabProfile">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>👤</span>
+            <span>ข้อมูลโปรไฟล์นักเขียน &amp; บัญชีรับเงิน</span>
+          </div>
+        </div>
+
+        <div style="max-width:560px;">
+          <form onsubmit="handleSaveWriterProfile(event)">
+            <div class="form-group">
+              <label>ชื่อ-นามสกุล / นามปากกา</label>
+              <input type="text" id="wpFullName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>อีเมลติดต่อ</label>
+              <input type="email" id="wpEmail" class="form-control" readonly style="background:#f8fafc; color:#64748b;">
+            </div>
+            <div class="form-group">
+              <label>เบอร์โทรศัพท์ติดต่อ</label>
+              <input type="tel" id="wpPhone" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>หมายเลขพร้อมเพย์ (PromptPay) หรือเลขบัญชีธนาคารสำหรับรับส่วนแบ่ง</label>
+              <input type="text" id="wpPromptPay" class="form-control" placeholder="เช่น 08x-xxx-xxxx หรือ กสิกรไทย 123-4-56789-0">
+            </div>
+            <button type="submit" class="btn-sm btn-primary" style="padding:10px 24px; font-size:14px;">
+              💾 บันทึกข้อมูลโปรไฟล์
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL: ADD / EDIT E-BOOK -->
+  <div class="modal-overlay" id="writerBookModal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeBookModal()">✕</button>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+        <span style="font-size:24px;">✨</span>
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:700; color:#0f172a;" id="bookModalTitle">เพิ่มผลงาน E-Book เล่มใหม่</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;">กรอกข้อมูลผลงานของคุณเพื่อนำขึ้นวางขายในร้านทันที</p>
+        </div>
+      </div>
+
+      <form id="writerBookForm" onsubmit="handleSaveBook(event)">
+        <input type="hidden" id="editBookId" value="">
+
+        <div class="form-group">
+          <label>ชื่อเรื่อง E-Book <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="wbTitle" class="form-control" placeholder="เช่น บันทึกรักนักเขียนต่างโลก เล่ม 1" required>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>หมวดหมู่ <span style="color:#ef4444;">*</span></label>
+            <select id="wbCategory" class="form-control" required>
+              <option value="1">1. มังงะ (การ์ตูน)</option>
+              <option value="2">2. หนังสือทั่วไป / ไลท์โนเวล</option>
+              <option value="3">3. นิยาย - ทั่วไป</option>
+              <option value="4">4. อาร์ตบุ๊ค</option>
+              <option value="5">5. คอมพิวเตอร์ &amp; เทคโนโลยี</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ราคาขาย (บาท) <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="wbPrice" class="form-control" min="0" step="0.5" placeholder="152.00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>รูปหน้าปกหนังสือ (อัปโหลดไฟล์รูปภาพ หรือใส่ URL) <span style="color:#ef4444;">*</span></label>
+          <input type="file" id="wbCoverFile" class="form-control" accept="image/*" style="margin-bottom:6px;">
+          <input type="url" id="wbCover" class="form-control" placeholder="หรือใส่ URL รูปภาพ เช่น https://images.unsplash.com/...">
+          <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; font-size:11.5px; color:#64748b;">
+            <span>รูปตัวอย่างคลิกใส่ทันที:</span>
+            <a style="color:#7c3aed; cursor:pointer; text-decoration:underline;" onclick="setSampleCover(1)">ปกมังงะ 1</a> |
+            <a style="color:#7c3aed; cursor:pointer; text-decoration:underline;" onclick="setSampleCover(2)">ปกนิยาย 2</a> |
+            <a style="color:#7c3aed; cursor:pointer; text-decoration:underline;" onclick="setSampleCover(3)">ปกแฟนตาซี 3</a>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>เรื่องย่อ / คำโปรยผลงาน</label>
+          <textarea id="wbDesc" class="form-control" rows="3" placeholder="ระบุเรื่องย่อ คำแนะนำผลงาน หรือไฮไลต์ที่น่าสนใจ..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>เนื้อหาตัวอย่างสำหรับ "ทดลองอ่าน"</label>
+          <textarea id="wbSample" class="form-control" rows="2" placeholder="ตัวอย่างเนื้อหาบทที่ 1 หรือคำโปรยเปิดเรื่อง..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>ไฟล์ PDF ผลงานฉบับเต็ม (อัปโหลด หรือใส่ URL)</label>
+          <input type="file" id="wbPdfFile" class="form-control" accept="application/pdf" style="margin-bottom:6px;">
+          <input type="url" id="wbPdfUrl" class="form-control" placeholder="หรือวาง URL ไฟล์ PDF ที่มีอยู่ เช่น https://...pdf">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" onclick="closeBookModal()" class="btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px;">
+            ยกเลิก
+          </button>
+          <button type="submit" class="btn-sm btn-primary" id="btnSubmitBook" style="padding:8px 22px;">
+            💾 บันทึกผลงาน E-Book
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const SUPABASE_URL = "https://qmpaatmniwagzijazzxb.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcGFhdG1uaXdhZ3ppamF6enhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2OTU4NDcsImV4cCI6MjEwNjI3MTg0N30.UrozUWTiA-aocCb0R1RSJ_RrNfmX8gPpnMz5vkhsxCg";
+    
+    let sbClient = null;
+    let currentWriter = null;
+    let myBooks = [];
+
+    let globalWriterRealtimeChannel = null;
+
+    function broadcastWriterRealtime(event, payload = {}) {
+      try {
+        if (globalWriterRealtimeChannel) {
+          globalWriterRealtimeChannel.send({
+            type: 'broadcast',
+            event: event,
+            payload: payload
+          });
+        }
+      } catch (err) {
+        console.warn("Writer realtime broadcast note:", event, err);
+      }
+    }
+
+    if (window.supabase) {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      try {
+        globalWriterRealtimeChannel = sbClient.channel('nothave_global_live_room');
+        globalWriterRealtimeChannel
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'ebooks' }, () => {
+            console.log("⚡ Writer Realtime: ebooks changed in DB");
+            if (typeof fetchWriterBooks === 'function') fetchWriterBooks();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+            console.log("⚡ Writer Realtime: orders changed in DB");
+            if (typeof fetchWriterOrders === 'function') fetchWriterOrders();
+          })
+          .on('broadcast', { event: 'book_update' }, () => {
+            if (typeof fetchWriterBooks === 'function') fetchWriterBooks();
+          })
+          .on('broadcast', { event: 'order_update' }, () => {
+            if (typeof fetchWriterOrders === 'function') fetchWriterOrders();
+          })
+          .subscribe((status) => {
+            console.log("Writer Realtime Channel Status:", status);
+          });
+      } catch (e) {
+        console.warn("Writer realtime setup note:", e);
+      }
+    }
+
+    // PANEL SWITCHER
+    function switchPanel(panelId, el) {
+      document.querySelectorAll(".content-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".sidebar-menu .menu-item").forEach(m => m.classList.remove("active"));
+      
+      const target = document.getElementById(panelId);
+      if (target) target.classList.add("active");
+      if (el) el.classList.add("active");
+    }
+
+    // MODAL
+    function openAddBookModal() {
+      document.getElementById("editBookId").value = "";
+      document.getElementById("bookModalTitle").innerText = "เพิ่มผลงาน E-Book เล่มใหม่";
+      document.getElementById("writerBookForm").reset();
+      document.getElementById("writerBookModal").classList.add("active");
+    }
+
+    function closeBookModal() {
+      document.getElementById("writerBookModal").classList.remove("active");
+    }
+
+    function setSampleCover(type) {
+      const covers = {
+        1: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80",
+        2: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=80",
+        3: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop&q=80"
+      };
+      const input = document.getElementById("wbCover");
+      if (input && covers[type]) input.value = covers[type];
+    }
+
+    // FETCH BOOKS
+    async function fetchWriterBooks() {
+      if (!sbClient) return;
+      try {
+        const { data, error } = await sbClient
+          .from("ebooks")
+          .select(`
+            ebook_id,
+            title,
+            price,
+            original_price,
+            cover_url,
+            file_url,
+            description,
+            sample_text,
+            is_active,
+            category_id,
+            categories ( category_id, category_name ),
+            authors ( author_id, author_name )
+          `)
+          .order("ebook_id", { ascending: false });
+
+        if (error) throw error;
+        myBooks = data || [];
+
+        // Update KPIs
+        const kpiBooks = document.getElementById("kpiMyBooks");
+        const sidebarCount = document.getElementById("sidebarBookCount");
+        if (kpiBooks) kpiBooks.innerText = `${myBooks.length} เล่ม`;
+        if (sidebarCount) sidebarCount.innerText = myBooks.length;
+
+        renderWriterBooks();
+        renderOverviewBooks();
+        fetchWriterOrders();
+      } catch (err) {
+        console.error("fetchWriterBooks error:", err);
+      }
+    }
+
+    function renderWriterBooks() {
+      const tbody = document.getElementById("writerBooksTbody");
+      if (!tbody) return;
+
+      if (myBooks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">ยังไม่มีผลงานในสตูดิโอ <button class="btn-sm btn-primary" onclick="openAddBookModal()" style="margin-left:10px;">+ เพิ่มเล่มแรก</button></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = myBooks.map(b => `
+        <tr>
+          <td><strong>${b.ebook_id}</strong></td>
+          <td>
+            <img src="${b.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100'}" style="width:40px; height:54px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; display:block;">
+          </td>
+          <td>
+            <strong style="color:#0f172a; font-size:13.5px;">${escapeHTML(b.title)}</strong>
+            <div style="font-size:11.5px; color:#64748b;">นักเขียน: ${escapeHTML(b.authors?.author_name || currentWriter?.full_name || 'ไม่ระบุ')}</div>
+          </td>
+          <td>
+            <span style="background:#f1f5f9; padding:3px 8px; border-radius:4px; font-size:12px; font-weight:500;">
+              ${escapeHTML(b.categories?.category_name || 'ทั่วไป')}
+            </span>
+          </td>
+          <td><strong style="color:#7c3aed; font-size:14px;">฿${parseFloat(b.price).toFixed(2)}</strong></td>
+          <td>
+            ${b.file_url ? '<span style="color:#10b981; font-weight:600;">✓ มีไฟล์ PDF</span>' : '<span style="color:#94a3b8;">ไม่มีไฟล์</span>'}
+          </td>
+          <td>
+            <span class="badge ${b.is_active ? 'badge-confirmed' : 'badge-cancelled'}">
+              ${b.is_active ? 'พร้อมขาย' : 'ปิดการขาย'}
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <div style="display:inline-flex; gap:6px;">
+              <button class="btn-sm" style="background:#ede9fe; color:#6d28d9; border:1px solid #ddd6fe;" onclick="editBook(${b.ebook_id})" title="แก้ไข">แก้ไข</button>
+              <button class="btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;" onclick="toggleBookStatus(${b.ebook_id}, ${b.is_active})">
+                ${b.is_active ? 'ปิดขาย' : 'เปิดขาย'}
+              </button>
+              <button class="btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;" onclick="deleteWriterBook(${b.ebook_id}, '${escapeQuote(b.title)}')">ลบ</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderOverviewBooks() {
+      const container = document.getElementById("overviewBooksList");
+      if (!container) return;
+
+      const recentBooks = myBooks.slice(0, 4);
+      if (recentBooks.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#94a3b8;">ยังไม่มีผลงาน E-Book ในระบบ</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px;">
+          ${recentBooks.map(b => `
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:center;">
+              <img src="${b.cover_url}" style="width:50px; height:68px; object-fit:cover; border-radius:4px; flex-shrink:0;">
+              <div style="flex:1; min-width:0;">
+                <div style="font-weight:700; font-size:13px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(b.title)}</div>
+                <div style="font-size:11.5px; color:#7c3aed; font-weight:700; margin:2px 0;">฿${parseFloat(b.price).toFixed(2)}</div>
+                <span class="badge ${b.is_active ? 'badge-confirmed' : 'badge-cancelled'}" style="font-size:10px;">${b.is_active ? 'พร้อมขาย' : 'ปิดการขาย'}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // SAVE BOOK (INSERT OR UPDATE)
+    async function handleSaveBook(e) {
+      e.preventDefault();
+      const bookId = document.getElementById("editBookId").value;
+      const title = document.getElementById("wbTitle").value.trim();
+      const catId = parseInt(document.getElementById("wbCategory").value);
+      async function uploadFileHelper(fileName, fileData) {
+        if (!fileData || !fileData.startsWith("data:")) return fileData;
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileName, fileData })
+          });
+          const json = await res.json();
+          if (json && json.success && json.url) {
+            return json.url;
+          }
+        } catch (uErr) {
+          console.warn("Upload helper note:", uErr);
+        }
+        return fileData;
+      }
+
+      const price = parseFloat(document.getElementById("wbPrice").value);
+      let cover = document.getElementById("wbCover").value.trim();
+      const coverFileInput = document.getElementById("wbCoverFile");
+      if (coverFileInput && coverFileInput.files && coverFileInput.files.length > 0) {
+        try {
+          const cFile = coverFileInput.files[0];
+          const cData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(cFile);
+          });
+          cover = await uploadFileHelper(cFile.name, cData);
+        } catch (cErr) {
+          console.warn("Cover file read error:", cErr);
+        }
+      } else if (cover && cover.startsWith("data:")) {
+        cover = await uploadFileHelper("cover.png", cover);
+      }
+      if (!cover) {
+        cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500";
+      }
+
+      const desc = document.getElementById("wbDesc").value.trim();
+      const sample = document.getElementById("wbSample").value.trim();
+      let pdfUrl = document.getElementById("wbPdfUrl").value.trim();
+
+      const pdfFileInput = document.getElementById("wbPdfFile");
+      if (pdfFileInput && pdfFileInput.files && pdfFileInput.files.length > 0) {
+        try {
+          const file = pdfFileInput.files[0];
+          const pData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+          pdfUrl = await uploadFileHelper(file.name, pData);
+        } catch (err) {
+          console.warn("PDF file read error:", err);
+        }
+      }
+
+      if (!pdfUrl) {
+        pdfUrl = "https://mockfile.nothave.com/ebooks/sample_book.pdf";
+      }
+
+      const submitBtn = document.getElementById("btnSubmitBook");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = "กำลังบันทึก...";
+      }
+
+      try {
+        if (bookId) {
+          // UPDATE
+          const { error } = await sbClient
+            .from("ebooks")
+            .update({
+              title,
+              category_id: catId,
+              price,
+              cover_url: cover,
+              description: desc,
+              sample_text: sample,
+              file_url: pdfUrl
+            })
+            .eq("ebook_id", parseInt(bookId));
+
+          if (error) throw error;
+          alert(`อัปเดตผลงาน "${title}" สำเร็จเรียบร้อยแล้ว!`);
+        } else {
+          // INSERT NEW
+          let writerAuthorId = null;
+          const writerNameClean = currentWriter?.full_name || "นักเขียน";
+          try {
+            const { data: existingAuthors } = await sbClient
+              .from("authors")
+              .select("author_id, author_name")
+              .ilike("author_name", writerNameClean)
+              .limit(1);
+
+            if (existingAuthors && existingAuthors.length > 0) {
+              writerAuthorId = existingAuthors[0].author_id;
+            } else {
+              const { data: newAuth } = await sbClient
+                .from("authors")
+                .insert([{ author_name: writerNameClean, bio: "ผู้สร้างสรรค์ผลงาน E-Book" }])
+                .select();
+              if (newAuth && newAuth[0]) {
+                writerAuthorId = newAuth[0].author_id;
+              }
+            }
+          } catch (aErr) {}
+
+          if (!writerAuthorId) {
+            try {
+              const { data: anyAuth } = await sbClient.from("authors").select("author_id").limit(1);
+              if (anyAuth && anyAuth.length > 0) {
+                writerAuthorId = anyAuth[0].author_id;
+              } else {
+                const { data: createdAuth } = await sbClient.from("authors").insert([{ author_name: writerNameClean, bio: "ผู้แต่ง" }]).select();
+                if (createdAuth && createdAuth[0]) writerAuthorId = createdAuth[0].author_id;
+              }
+            } catch (fErr) {}
+          }
+
+          const { error } = await sbClient
+            .from("ebooks")
+            .insert([{
+              title,
+              author_id: writerAuthorId,
+              category_id: catId,
+              price,
+              original_price: price,
+              point_reward: Math.round(price * 0.2),
+              description: desc,
+              sample_text: sample,
+              cover_url: cover,
+              file_url: pdfUrl,
+              is_active: true
+            }]);
+
+          if (error) throw error;
+          alert(`ลงผลงาน "${title}" เข้าสู่ร้านค้าสำเร็จเรียบร้อยแล้ว!`);
+        }
+
+        closeBookModal();
+        broadcastWriterRealtime('book_update');
+        await fetchWriterBooks();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "💾 บันทึกผลงาน E-Book";
+        }
+      }
+    }
+
+    function editBook(id) {
+      const book = myBooks.find(b => b.ebook_id === id);
+      if (!book) return;
+
+      document.getElementById("editBookId").value = book.ebook_id;
+      document.getElementById("bookModalTitle").innerText = `แก้ไขผลงาน: ${book.title}`;
+      document.getElementById("wbTitle").value = book.title;
+      document.getElementById("wbCategory").value = book.category_id || 1;
+      document.getElementById("wbPrice").value = book.price;
+      document.getElementById("wbCover").value = book.cover_url || "";
+      document.getElementById("wbDesc").value = book.description || "";
+      document.getElementById("wbSample").value = book.sample_text || "";
+      document.getElementById("wbPdfUrl").value = book.file_url || "";
+
+      document.getElementById("writerBookModal").classList.add("active");
+    }
+
+    async function toggleBookStatus(id, currentStatus) {
+      const newStatus = !currentStatus;
+      try {
+        const { error } = await sbClient
+          .from("ebooks")
+          .update({ is_active: newStatus })
+          .eq("ebook_id", id);
+
+        if (error) throw error;
+        broadcastWriterRealtime('book_update');
+        await fetchWriterBooks();
+      } catch (err) {
+        alert("ไม่สามารถเปลี่ยนสถานะได้: " + err.message);
+      }
+    }
+
+    async function deleteWriterBook(id, title) {
+      if (!confirm(`คุณต้องการลบผลงาน "${title}" (ID: ${id}) ออกจากร้านค้าใช่หรือไม่?`)) return;
+
+      try {
+        await sbClient.from("download_links").delete().eq("ebook_id", id);
+        await sbClient.from("order_items").delete().eq("ebook_id", id);
+        const { error } = await sbClient.from("ebooks").delete().eq("ebook_id", id);
+        if (error) throw error;
+
+        alert(`ลบผลงาน "${title}" เรียบร้อยแล้ว`);
+        broadcastWriterRealtime('book_update');
+        await fetchWriterBooks();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการลบ: " + err.message);
+      }
+    }
+
+    // FETCH ORDERS & EARNINGS
+    async function fetchWriterOrders() {
+      if (!sbClient) return;
+      try {
+        const { data: orders, error } = await sbClient
+          .from("orders")
+          .select(`
+            order_id,
+            order_date,
+            total_amount,
+            status,
+            users ( full_name, email ),
+            order_items (
+              item_id,
+              ebook_id,
+              price_at_purchase,
+              quantity,
+              ebooks ( title )
+            )
+          `)
+          .order("order_id", { ascending: false });
+
+        if (error) throw error;
+
+        const tbody = document.getElementById("writerOrdersTbody");
+        if (!tbody) return;
+
+        if (!orders || orders.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">ยังไม่มีคำสั่งซื้อผลงานเข้ามา</td></tr>`;
+          return;
+        }
+
+        let totalEarnings = 0;
+        let confirmedRoyalty = 0;
+        let pendingRoyalty = 0;
+
+        tbody.innerHTML = orders.map(ord => {
+          const amount = parseFloat(ord.total_amount || 0);
+          totalEarnings += amount;
+
+          if (ord.status === "confirmed") {
+            confirmedRoyalty += amount * 0.7; // 70% share
+          } else if (ord.status === "pending") {
+            pendingRoyalty += amount * 0.7;
+          }
+
+          const itemsText = (ord.order_items || []).map(i => i.ebooks?.title || `E-Book #${i.ebook_id}`).join(", ") || "หนังสือดิจิทัล";
+          const statusBadge = ord.status === "confirmed" ? 
+            `<span class="badge badge-confirmed">ยืนยันแล้ว</span>` : 
+            (ord.status === "pending" ? `<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">รอตรวจสอบ</span>` : `<span class="badge badge-cancelled">ยกเลิก</span>`);
+
+          return `
+            <tr>
+              <td><strong>#ORD-${ord.order_id}</strong></td>
+              <td>${new Date(ord.order_date).toLocaleDateString('th-TH')}</td>
+              <td>${escapeHTML(ord.users?.full_name || 'ลูกค้า')}</td>
+              <td style="max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(itemsText)}</td>
+              <td><strong style="color:#7c3aed;">฿${amount.toFixed(2)}</strong></td>
+              <td>${statusBadge}</td>
+            </tr>
+          `;
+        }).join("");
+
+        // Update KPIs
+        const kpiEarnings = document.getElementById("kpiTotalEarnings");
+        const kpiOrders = document.getElementById("kpiOrderCount");
+        const kpiRoyalty = document.getElementById("kpiRoyaltyShare");
+        const confRoyaltyEl = document.getElementById("confirmedRoyaltyVal");
+        const pendRoyaltyEl = document.getElementById("pendingRoyaltyVal");
+
+        if (kpiEarnings) kpiEarnings.innerText = `฿${totalEarnings.toFixed(2)}`;
+        if (kpiOrders) kpiOrders.innerText = `${orders.length} ออเดอร์`;
+        if (kpiRoyalty) kpiRoyalty.innerText = `฿${confirmedRoyalty.toFixed(2)}`;
+        if (confRoyaltyEl) confRoyaltyEl.innerText = `฿${confirmedRoyalty.toFixed(2)}`;
+        if (pendRoyaltyEl) pendRoyaltyEl.innerText = `฿${pendingRoyalty.toFixed(2)}`;
+
+      } catch (err) {
+        console.error("fetchWriterOrders error:", err);
+      }
+    }
+
+    // PROFILE
+    function handleSaveWriterProfile(e) {
+      e.preventDefault();
+      const fullName = document.getElementById("wpFullName").value.trim();
+      const phone = document.getElementById("wpPhone").value.trim();
+      const promptpay = document.getElementById("wpPromptPay").value.trim();
+
+      if (currentWriter) {
+        currentWriter.full_name = fullName;
+        currentWriter.phone = phone;
+        currentWriter.promptpay = promptpay;
+        localStorage.setItem("nothave_user", JSON.stringify(currentWriter));
+        localStorage.setItem("nothave_writer_payout", promptpay);
+
+        const nameEl = document.getElementById("sidebarName");
+        if (nameEl) nameEl.innerText = fullName;
+        alert("บันทึกข้อมูลโปรไฟล์และช่องทางรับเงินเรียบร้อยแล้ว!");
+      }
+    }
+
+    function handleLogout() {
+      if (!confirm("คุณต้องการออกจากระบบสตูดิโอนักเขียนหรือไม่?")) return;
+      localStorage.removeItem("nothave_user");
+      window.location.replace("index.html");
+    }
+
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>"']/g, m => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+
+    function escapeQuote(str) {
+      if (!str) return "";
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // INITIALIZATION
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        const stored = localStorage.getItem("nothave_user");
+        if (stored) {
+          currentWriter = JSON.parse(stored);
+          const nameEl = document.getElementById("sidebarName");
+          const avatarEl = document.getElementById("sidebarAvatar");
+          const roleBadge = document.getElementById("sidebarRoleBadge");
+          
+          if (nameEl) nameEl.innerText = currentWriter.full_name || "นักเขียน";
+          if (avatarEl && currentWriter.full_name) avatarEl.innerText = currentWriter.full_name.charAt(0).toUpperCase();
+          if (roleBadge) roleBadge.innerText = currentWriter.role_id === 2 ? "Admin & Writer" : "นักเขียน (Writer)";
+          if (currentWriter.role_id === 2) {
+            const btnAdmin = document.getElementById("btnAdminCmsFromWriter");
+            if (btnAdmin) btnAdmin.style.display = "inline-flex";
+          }
+
+          // Pre-fill profile
+          const wpName = document.getElementById("wpFullName");
+          const wpEmail = document.getElementById("wpEmail");
+          const wpPhone = document.getElementById("wpPhone");
+          const wpPrompt = document.getElementById("wpPromptPay");
+          if (wpName) wpName.value = currentWriter.full_name || "";
+          if (wpEmail) wpEmail.value = currentWriter.email || "";
+          if (wpPhone) wpPhone.value = currentWriter.phone || "";
+          if (wpPrompt) wpPrompt.value = localStorage.getItem("nothave_writer_payout") || "";
+        }
+      } catch (e) {}
+
+      fetchWriterBooks();
+    });
+  </script>
+</body>
+</html>

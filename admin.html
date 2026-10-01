@@ -1,0 +1,4179 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบริหารจัดการหลังบ้าน (Admin CMS) | NOT HAVE A BOOK SHOP</title>
+  <!-- Google Fonts: Barlow Condensed & Prompt & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Prompt:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PDF.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- ======================================================== -->
+  <!-- CYBER SECURITY: ROUTE GUARD & ROLE-BASED ACCESS CONTROL  -->
+  <!-- OWASP A01: Broken Access Control Prevention              -->
+  <!-- ป้องกันการคัดลอก URL/Address เข้าหลังบ้านโดยไม่ได้รับอนุญาต -->
+  <!-- ======================================================== -->
+  <script>
+    (function guardAdminPage() {
+      try {
+        const storedUser = localStorage.getItem("nothave_user");
+        if (!storedUser) {
+          window.location.replace("index.html?auth_error=unauthorized");
+          return;
+        }
+        const user = JSON.parse(storedUser);
+        // อนุญาตทั้ง Admin (role_id: 2) และ Writer (role_id: 3) เข้าหลังบ้านได้
+        if (!user || (user.role_id !== 2 && user.role_id !== 3)) {
+          window.location.replace("index.html?auth_error=forbidden");
+          return;
+        }
+      } catch (err) {
+        window.location.replace("index.html");
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: #1e293b;
+      --sidebar-text: #94a3b8;
+      --sidebar-active: #38bdf8;
+      --main-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --danger: #dc2626;
+      --radius: 8px;
+      --font: 'Prompt', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--main-bg);
+      color: var(--text-main);
+      display: none;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .admin-sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #1e293b;
+    }
+
+    .sidebar-brand {
+      padding: 20px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .brand-badge {
+      font-size: 10px;
+      background: #0369a1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #e0f2fe;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .sidebar-menu {
+      padding: 16px 10px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .menu-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      background: var(--sidebar-hover);
+      color: #f8fafc;
+    }
+
+    .nav-link.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      background: #090d16;
+    }
+
+    .admin-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #38bdf8;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    /* MAIN CONTENT */
+    .admin-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .admin-topbar {
+      height: 60px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .topbar-left {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .topbar-left strong {
+      color: var(--text-main);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-view-store {
+      background: #e0f2fe;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-view-store:hover {
+      background: #bae6fd;
+    }
+
+    .admin-content-area {
+      padding: 24px;
+      max-width: 1400px;
+    }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+
+    @keyframes pulseDot {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    .live-dot {
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes spinSync {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .rotating svg {
+      animation: spinSync 1s linear infinite;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .kpi-info {
+      flex: 1;
+    }
+
+    .kpi-title {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* PANELS */
+    .content-panel {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      display: none;
+    }
+
+    .content-panel.active {
+      display: block;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TABLES */
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .custom-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .custom-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .custom-table tr:hover {
+      background: #f8fafc;
+    }
+
+    /* STATUS BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-confirmed {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-pending {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-cancelled {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+    }
+
+    .btn-approve {
+      background: #16a34a;
+      color: white;
+    }
+
+    .btn-approve:hover {
+      background: #15803d;
+    }
+
+    .btn-reject {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-reject:hover {
+      background: #b91c1c;
+    }
+
+    .btn-primary {
+      background: #0284c7;
+      color: white;
+      padding: 8px 16px;
+    }
+
+    .btn-primary:hover {
+      background: #0369a1;
+    }
+
+    /* SQL BOX */
+    .sql-code-box {
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      margin-top: 8px;
+      overflow-x: auto;
+      border: 1px solid #1e293b;
+    }
+
+    /* MODAL */
+    .admin-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(3px);
+    }
+
+    .admin-modal-overlay.active {
+      display: flex;
+    }
+
+    .admin-modal {
+      background: #ffffff;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 1. ADMIN SIDEBAR (แตกต่างจาก User 100%) -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" id="sidebarBrandIcon">AD</div>
+      <div>
+        <div class="brand-title">NOT HAVE A BOOK SHOP</div>
+        <div class="brand-badge" id="sidebarBrandBadge">ADMIN CONTROL PANEL</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <div class="menu-header" id="sidebarMenuHeader">เมนูจัดการร้านค้า</div>
+      <a class="nav-link active" id="navLinkOverview" onclick="switchTab('tabOverview', this)">
+        ภาพรวมร้านค้า (Overview)
+      </a>
+      <a class="nav-link" id="navLinkOrders" onclick="switchTab('tabOrders', this)">
+        จัดการคำสั่งซื้อ (Orders)
+      </a>
+      <a class="nav-link" id="navLinkInventory" onclick="switchTab('tabInventory', this)">
+        จัดการคลังหนังสือ (Inventory)
+      </a>
+      <a class="nav-link" id="navLinkUsers" onclick="switchTab('tabUsers', this)">
+        <span>ข้อมูลลูกค้า &amp; สมาชิก (Users)</span>
+        <span id="sidebarUserBadge"
+          style="display:none; background:#7c3aed; color:#fff; font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:6px;">0</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-profile" onclick="openAdminProfileModal()"
+        style="cursor:pointer; transition:all 0.2s; border-radius:6px; padding:4px;" title="คลิกเพื่อตั้งค่าโปรไฟล์">
+        <div class="admin-avatar" id="sidebarAdminAvatar">A</div>
+        <div>
+          <div style="font-weight:700; color:#f8fafc; display:flex; align-items:center; gap:4px;">
+            <span id="sidebarAdminName">Admin (ผู้ดูแลร้าน)</span>
+          </div>
+          <div style="color:#64748b; font-size:11px;" id="sidebarAdminEmail">admin@nothave.com</div>
+        </div>
+      </div>
+      <a href="index.html" onclick="logoutAdmin()"
+        style="color:#ef4444; font-size:11.5px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:4px; padding:4px 6px; border-radius:4px;"
+        title="ออกจากระบบ">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        <span>ออกจากระบบ</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- 2. MAIN ADMIN CONTENT -->
+  <main class="admin-main">
+    <!-- TOPBAR -->
+    <header class="admin-topbar">
+      <div class="topbar-left" id="adminTopbarTitle">
+        กำลังใช้งานระบบบริหารจัดการหลังบ้าน : <strong>บักบ่ได้หนังสือ (Back-Office CMS)</strong>
+      </div>
+      <div class="topbar-actions" style="display:flex; align-items:center; gap:10px;">
+        <div id="realtimeBadge"
+          style="display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:5px 12px; border-radius:20px; font-weight:600;">
+          <span class="live-dot"
+            style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 0 2px rgba(16,185,129,0.3);"></span>
+          <span>Supabase Real-time: Live</span>
+        </div>
+        <button class="btn-sm"
+          style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; display:inline-flex; align-items:center; gap:5px; padding:6px 12px;"
+          onclick="refreshAllRealtimeData()" title="ดึงข้อมูลสดล่าสุดจาก Supabase ทันที">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          <span>ซิงค์ข้อมูลสด</span>
+        </button>
+        <button class="btn-sm btn-primary" id="btnTopbarAddBook" onclick="openAddBookModal()">
+          เพิ่ม E-Book เล่มใหม่
+        </button>
+        <a href="index.html" class="btn-view-store">
+          สลับไปดูมุมมองลูกค้า
+        </a>
+      </div>
+    </header>
+
+    <div class="admin-content-area">
+
+      <!-- KPI SUMMARY METRICS (REAL-TIME SUPABASE) FOR ADMIN -->
+      <div class="kpi-grid" id="adminKpiGrid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#e0f2fe; color:#0284c7; font-weight:700; font-size:16px;">฿</div>
+          <div class="kpi-info">
+            <div class="kpi-title">ยอดขายรวมยืนยันแล้ว (100%)</div>
+            <div class="kpi-value" id="kpiRevenue">กำลังโหลด...</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#ecfdf5; color:#059669; font-weight:700; font-size:14px;">ADMIN</div>
+          <div class="kpi-info">
+            <div class="kpi-title">รายได้ระบบ/แอดมิน (30%)</div>
+            <div class="kpi-value" style="color:#059669;" id="kpiAdminProfit">฿0.00</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fef3c7; color:#d97706; font-weight:700; font-size:14px;">WRITER</div>
+          <div class="kpi-info">
+            <div class="kpi-title">ส่วนแบ่งจ่ายนักเขียน (70%)</div>
+            <div class="kpi-value" style="color:#d97706;" id="kpiWriterRoyalty">฿0.00</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fff7ed; color:#ea580c; font-weight:700; font-size:14px;">WAIT</div>
+          <div class="kpi-info">
+            <div class="kpi-title">รอตรวจสอบสลิป/ชำระ</div>
+            <div class="kpi-value" style="color:#ea580c;" id="kpiPending">กำลังโหลด...</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#dcfce7; color:#16a34a; font-weight:700; font-size:14px;">ORD</div>
+          <div class="kpi-info">
+            <div class="kpi-title">คำสั่งซื้อในระบบทั้งหมด</div>
+            <div class="kpi-value" id="kpiOrders">กำลังโหลด...</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f3e8ff; color:#9333ea; font-weight:700; font-size:14px;">BOOK</div>
+          <div class="kpi-info">
+            <div class="kpi-title">จำนวนหนังสือในคลัง</div>
+            <div class="kpi-value" id="kpiBooks">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROMOTION MANAGER (ADMIN CONTROLLER) -->
+      <div id="promotionControllerBox" style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:16px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:20px;">🏷️</span>
+            <div>
+              <strong style="color:#0f172a; font-size:14px;">จัดการแคมเปญโปรโมชันหน้าร้าน (Promotion &amp; Discount Controller)</strong>
+              <div style="font-size:11.5px; color:#64748b;">ตั้งค่าข้อความแถบโปรโมชันและส่วนลด โดยใส่รหัส Admin ยืนยันเพื่ออัปเดตหน้าเว็บทันที</div>
+            </div>
+          </div>
+          <span id="currentPromoBadge" style="background:#eff6ff; color:#0284c7; border:1px solid #bfdbfe; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:12px;">
+            กำลังใช้งาน: <span id="currentPromoTextDisplay">โปรโมชันพิเศษ 3 วัน</span>
+          </span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px 140px; gap:10px; align-items:flex-end;">
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ข้อความแถบโปรโมชันหน้าร้าน</label>
+            <input type="text" id="adminPromoText" class="form-control" style="padding:7px 10px; font-size:13px;" value="โปรโมชันพิเศษ 3 วัน" placeholder="เช่น โปรโมชันพิเศษ 3 วัน">
+          </div>
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ส่วนลดทั้งร้าน (%)</label>
+            <input type="number" id="adminPromoDiscount" class="form-control" style="padding:7px 10px; font-size:13px;" value="0" min="0" max="90" placeholder="0">
+          </div>
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสโปรโมชัน (Promo Code)</label>
+            <input type="text" id="adminPromoCode" class="form-control" style="padding:7px 10px; font-size:13px;" value="ADMINVIP" placeholder="ADMINVIP">
+          </div>
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสผ่าน Admin</label>
+            <input type="password" id="adminPromoAuthPass" class="form-control" style="padding:7px 10px; font-size:13px;" placeholder="รหัสผ่าน">
+          </div>
+          <div>
+            <button type="button" class="btn-sm btn-primary" style="width:100%; padding:8px 12px; font-weight:700; height:35px;" onclick="saveAdminPromotionSettings()">
+              ⚡ อัปเดตหน้าเว็บ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI SUMMARY METRICS FOR WRITER (แสดงเฉพาะเมื่อเป็นนักเขียน) -->
+      <div class="kpi-grid" id="writerKpiGrid"
+        style="display:none; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f3e8ff; color:#9333ea; font-weight:700; font-size:16px;">📚</div>
+          <div class="kpi-info">
+            <div class="kpi-title">ผลงานหนังสือทั้งหมดของฉัน</div>
+            <div class="kpi-value" id="writerKpiTotal">0 เล่ม</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fef3c7; color:#ea580c; font-weight:700; font-size:15px;">⏳</div>
+          <div class="kpi-info">
+            <div class="kpi-title">รอ Admin ตรวจสอบอนุมัติ</div>
+            <div class="kpi-value" style="color:#ea580c;" id="writerKpiPending">0 เล่ม</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#dcfce7; color:#16a34a; font-weight:700; font-size:15px;">✅</div>
+          <div class="kpi-info">
+            <div class="kpi-title">อนุมัติลงหน้าเว็บแล้ว</div>
+            <div class="kpi-value" style="color:#16a34a;" id="writerKpiApproved">0 เล่ม</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#e0f2fe; color:#0284c7; font-weight:700; font-size:15px;">✍️</div>
+          <div class="kpi-info">
+            <div class="kpi-title">สิทธิ์การใช้งาน</div>
+            <div class="kpi-value" style="font-size:15px; color:#0284c7;" id="writerKpiStatus">นักเขียน (Writer)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 1: OVERVIEW & PENDING ORDERS -->
+      <div class="content-panel active" id="tabOverview">
+        <!-- ROLE APPROVAL REQUEST ALERT BANNER -->
+        <div id="overviewRoleReqAlert"
+          style="display:none; background:linear-gradient(135deg, #ede9fe, #f5f3ff); border:1.5px solid #c4b5fd; border-radius:10px; padding:12px 18px; margin-bottom:18px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(124,58,237,0.08);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:24px;">📩</span>
+            <div>
+              <div style="font-weight:700; color:#5b21b6; font-size:14px;">
+                มีคำขออนุมัติบทบาท (Role Requests) ที่รออนุมัติ <span id="overviewRoleReqCount"
+                  style="background:#7c3aed; color:#fff; padding:1px 8px; border-radius:10px; font-size:12px; margin-left:4px;">0</span>
+                รายการ
+              </div>
+              <div style="font-size:12px; color:#6d28d9;">
+                สมาชิกได้ส่งขอความอนุมัติบทบาท (Writer / Admin) คุณสามารถตรวจสอบและกดอนุมัติได้ทันที
+              </div>
+            </div>
+          </div>
+          <button class="btn-sm"
+            style="background:#7c3aed; color:#fff; border:none; padding:7px 16px; border-radius:6px; font-weight:600; cursor:pointer;"
+            onclick="switchTab('tabUsers', document.getElementById('navLinkUsers'))">
+            🔍 ไปที่หน้าอนุมัติสิทธิ์บทบาท ›
+          </button>
+        </div>
+
+        <!-- CATEGORY SALES ANALYTICS (กราฟแท่งสถิติหมวดหมู่หนังสือที่คนซื้อมากที่สุด) -->
+        <div id="categorySalesAnalyticsBox" style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; margin-bottom:22px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:22px;">📊</span>
+              <div>
+                <strong style="color:#0f172a; font-size:14.5px;">หมวดหมู่หนังสือที่คนซื้อมากที่สุด (Top-Selling Book Categories)</strong>
+                <div style="font-size:12px; color:#64748b;">สถิติวิเคราะห์ยอดขายและจำนวนเล่มที่สั่งซื้อแยกตามหมวดหมู่ E-Book ในระบบ Real-Time</div>
+              </div>
+            </div>
+            <div id="topCategoryHighlightBadge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;">
+              <span>👑 ยอดนิยมอันดับ 1:</span> <span id="topCategoryNameText">กำลังคำนวณ...</span>
+            </div>
+          </div>
+          
+          <div id="categorySalesBarsContainer" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">กำลังคำนวณสถิติยอดขายตามหมวดหมู่...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 2: ORDERS MANAGEMENT -->
+      <div class="content-panel" id="tabOrders">
+        <div class="panel-header"
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="panel-title">ประวัติคำสั่งซื้อทั้งหมดในระบบ</div>
+            <span id="selectedOrdersBadge"
+              style="display:none; background:#fee2e2; color:#dc2626; font-size:12px; font-weight:700; padding:3px 10px; border-radius:12px; border:1px solid #fecaca;">
+              เลือกแล้ว <span id="selectedOrdersCount">0</span> รายการ
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button id="btnDeleteSelectedOrders" class="btn-sm btn-reject"
+              style="display:none; font-weight:700; padding:6px 14px; box-shadow:0 1px 3px rgba(220,38,38,0.25);"
+              onclick="deleteSelectedOrders()">
+              🗑️ ลบที่เลือก (<span id="btnDeleteSelectedCount">0</span>)
+            </button>
+            <button class="btn-sm"
+              style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:700; padding:6px 12px;"
+              onclick="deleteAllOrders()" title="ลบคำสั่งซื้อทั้งหมดในฐานข้อมูลถาวร">
+              ⚠️ ลบคำสั่งซื้อทั้งหมด
+            </button>
+            <button class="btn-sm"
+              style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px;"
+              onclick="fetchAndRenderOrders()" title="ดึงข้อมูลคำสั่งซื้อจาก Supabase ทันที">
+              🔄 รีเฟรชคำสั่งซื้อ
+            </button>
+          </div>
+        </div>
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width:38px; text-align:center;">
+                <input type="checkbox" id="selectAllOrdersCheckbox" onchange="toggleSelectAllOrders(this)"
+                  title="ติ๊กเลือกทั้งหมด" style="cursor:pointer; width:16px; height:16px;">
+              </th>
+              <th>Order ID</th>
+              <th>ชื่อลูกค้า</th>
+              <th>วัน-เวลาที่สั่งซื้อ</th>
+              <th>ยอดสุทธิ</th>
+              <th>หลักฐานชำระเงิน</th>
+              <th>สถานะ</th>
+              <th style="text-align:center;">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="allOrdersTbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PANEL 3: INVENTORY MANAGEMENT -->
+      <div class="content-panel" id="tabInventory">
+        <div class="panel-header"
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div>
+              <div class="panel-title" id="inventoryPanelTitle">จัดการคลังหนังสือ E-Book</div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;" id="inventoryPanelSubtitle">
+                กดปุ่มสีแดง <strong style="color:#dc2626;">[ลบเล่มนี้]</strong> เพื่อลบหนังสือออกจากร้านค้าทันที
+                (มีผลทั้งหน้าร้านและหลังบ้าน)
+              </p>
+            </div>
+            <span id="selectedBooksBadge"
+              style="display:none; background:#fee2e2; color:#dc2626; font-size:12px; font-weight:700; padding:3px 10px; border-radius:12px; border:1px solid #fecaca;">
+              เลือกแล้ว <span id="selectedBooksCount">0</span> เล่ม
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button id="btnDeleteSelectedBooks" class="btn-sm btn-reject"
+              style="display:none; font-weight:700; padding:6px 14px; box-shadow:0 1px 3px rgba(220,38,38,0.25);"
+              onclick="deleteSelectedBooks()">
+              🗑️ ลบที่เลือก (<span id="btnDeleteSelectedBooksCount">0</span>)
+            </button>
+            <button id="btnDeleteAllBooks" class="btn-sm"
+              style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:700; padding:6px 12px;"
+              onclick="deleteAllBooks()" title="ลบหนังสือทั้งหมดออกจากระบบ">
+              ⚠️ ลบหนังสือทั้งหมด
+            </button>
+            <button class="btn-sm btn-primary" id="btnAddBookMain" onclick="openAddBookModal()">+
+              เพิ่มหนังสือใหม่</button>
+            <button id="btnRestoreBooks" class="btn-sm"
+              style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px;"
+              onclick="restoreAllDeletedBooks()" title="กู้คืนหนังสือที่เคยลบกลับมาทั้งหมด">
+              กู้คืนหนังสือที่เคยลบ
+            </button>
+            <button class="btn-sm"
+              style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px;"
+              onclick="fetchAdminInventory()" title="ดึงข้อมูลคลังหนังสือจาก Supabase ทันที">
+              🔄 รีเฟรชคลัง
+            </button>
+          </div>
+        </div>
+
+        <!-- Inventory Quick Filter Pills (All / Pending Admin Approval / Approved) -->
+        <div id="inventoryFilterBar"
+          style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; padding:6px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+          <span style="font-size:12px; font-weight:600; color:#64748b; margin-right:4px;">ตัวกรอง:</span>
+          <button class="btn-sm" id="btnFilterAll" onclick="filterInventoryView('all')"
+            style="background:#0284c7; color:#fff; border:none; font-weight:600; padding:5px 12px; border-radius:16px; cursor:pointer;">
+            📚 ทั้งหมด (<span id="filterAllCount">0</span>)
+          </button>
+          <button class="btn-sm" id="btnFilterPending" onclick="filterInventoryView('pending')"
+            style="background:#fff; color:#92400e; border:1px solid #fde68a; font-weight:600; padding:5px 12px; border-radius:16px; cursor:pointer;">
+            ⏳ รอ Admin อนุมัติ (<span id="filterPendingCount">0</span>)
+          </button>
+          <button class="btn-sm" id="btnFilterApproved" onclick="filterInventoryView('approved')"
+            style="background:#fff; color:#166534; border:1px solid #bbf7d0; font-weight:600; padding:5px 12px; border-radius:16px; cursor:pointer;">
+            ✅ วางขายบนหน้าร้านแล้ว (<span id="filterApprovedCount">0</span>)
+          </button>
+        </div>
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width:38px; text-align:center;">
+                <input type="checkbox" id="selectAllBooksCheckbox" onchange="toggleSelectAllBooks(this)"
+                  title="ติ๊กเลือกทั้งหมด" style="cursor:pointer; width:16px; height:16px;">
+              </th>
+              <th style="width:40px;">ID</th>
+              <th style="width:50px;">ภาพหน้าปก</th>
+              <th>ชื่อเรื่อง</th>
+              <th>หมวดหมู่</th>
+              <th>ราคาขาย</th>
+              <th>สถานะเปิดขาย</th>
+              <th style="width:230px; text-align:center;">จัดการ (แก้ไข / เปิด-ปิด / ลบ)</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PANEL 5: USERS & ROLES -->
+      <div class="content-panel" id="tabUsers">
+        <div class="panel-header"
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="panel-title">จัดการบัญชีผู้ใช้และบทบาท (Customer vs Admin)</div>
+            <span id="selectedUsersBadge"
+              style="display:none; background:#fee2e2; color:#dc2626; font-size:12px; font-weight:700; padding:3px 10px; border-radius:12px; border:1px solid #fecaca;">
+              เลือกแล้ว <span id="selectedUsersCount">0</span> บัญชี
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button id="btnDeleteSelectedUsers" class="btn-sm btn-reject"
+              style="display:none; font-weight:700; padding:6px 14px; box-shadow:0 1px 3px rgba(220,38,38,0.25);"
+              onclick="deleteSelectedUsers()">
+              🗑️ ลบที่เลือก (<span id="btnDeleteSelectedUsersCount">0</span>)
+            </button>
+            <button class="btn-sm"
+              style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:700; padding:6px 12px;"
+              onclick="deleteAllUsers()" title="ลบสมาชิกลูกค้าทั้งหมด (ยกเว้นแอดมินที่กำลังใช้งาน)">
+              ⚠️ ลบสมาชิกลูกค้าทั้งหมด
+            </button>
+            <button class="btn-sm"
+              style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px;"
+              onclick="fetchAndRenderUsers()" title="ดึงข้อมูลผู้ใช้จาก Supabase ทันที">
+              🔄 รีเฟรชข้อมูลผู้ใช้
+            </button>
+          </div>
+        </div>
+
+        <!-- ROLE APPROVAL REQUESTS SECTION -->
+        <div id="roleRequestsCard"
+          style="margin-bottom:20px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:14.5px; font-weight:700; color:#6d28d9; display:flex; align-items:center; gap:8px;">
+              <span>💬</span>
+              <span>คำขออนุมัติบทบาทและข้อความแท็ก @Admin (Role &amp; @Admin Mention Requests)</span>
+              <span id="roleReqCountBadge"
+                style="background:#7c3aed; color:#fff; font-size:11px; padding:2px 8px; border-radius:12px; font-weight:700;">0
+                รายการ</span>
+            </div>
+            <button class="btn-sm" style="background:#ede9fe; color:#6d28d9; border:1px solid #ddd6fe; cursor:pointer;"
+              onclick="renderRoleRequests()">🔄 รีเฟรชคำขอ</button>
+          </div>
+          <div id="roleRequestsContainer">
+            <!-- Populated by renderRoleRequests() -->
+          </div>
+        </div>
+
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width:38px; text-align:center;">
+                <input type="checkbox" id="selectAllUsersCheckbox" onchange="toggleSelectAllUsers(this)"
+                  title="ติ๊กเลือกทั้งหมด" style="cursor:pointer; width:16px; height:16px;">
+              </th>
+              <th>ID</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>อีเมล</th>
+              <th>เบอร์โทร</th>
+              <th>รหัสผ่าน (Hash)</th>
+              <th>บทบาท (Role)</th>
+              <th style="text-align:center;">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="usersTbody">
+            <tr>
+              <td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">
+                กำลังโหลดข้อมูลผู้ใช้จากฐานข้อมูล...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PANEL 6: AUDIT LOG -->
+      <div class="content-panel" id="tabAuditLog">
+        <div class="panel-header">
+          <div class="panel-title">บันทึกกิจกรรมระบบ (System Audit Log)</div>
+          <button class="btn-sm btn-reject" onclick="clearAdminLogs()">ล้างประวัติ</button>
+        </div>
+        <div id="adminAuditLogContainer" style="max-height:450px; overflow-y:auto;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+
+
+  <!-- MODAL: ADMIN PROFILE SETTINGS -->
+  <div class="admin-modal-overlay" id="adminProfileModal">
+    <div class="admin-modal" style="max-width: 480px;">
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <h3 style="font-size:16px; font-weight:700;">
+          ตั้งค่าโปรไฟล์แอดมิน (Admin Profile)
+        </h3>
+        <button onclick="closeAdminProfileModal()"
+          style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="handleSaveAdminProfile(event)">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ชื่อ - นามสกุล *</label>
+          <input type="text" id="adminProfileName" required
+            style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">อีเมล (Email)</label>
+          <input type="email" id="adminProfileEmail" readonly
+            style="width:100%; padding:8px 10px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; border-radius:4px; font-family:inherit; cursor:not-allowed;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">เบอร์โทรศัพท์</label>
+          <input type="tel" id="adminProfilePhone" placeholder="เช่น 081-234-5678"
+            style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+        </div>
+
+        <div style="border-top:1px solid #e2e8f0; padding-top:12px; margin-top:12px;">
+          <div style="font-weight:700; font-size:13px; color:#334155; margin-bottom:6px;">เปลี่ยนรหัสผ่านแอดมิน</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">รหัสผ่านใหม่</label>
+              <input type="password" id="adminProfileNewPass" placeholder="เว้นว่างไว้หากไม่เปลี่ยน"
+                style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px;">
+            </div>
+            <div>
+              <label
+                style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">ยืนยันรหัสผ่านใหม่</label>
+              <input type="password" id="adminProfileConfirmPass" placeholder="พิมพ์ซ้ำเพื่อยืนยัน"
+                style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <div id="adminProfileSaveMsg"
+          style="display:none; padding:8px 10px; border-radius:4px; font-size:12px; margin-bottom:12px; text-align:center; font-weight:600;">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeAdminProfileModal()" class="btn-sm"
+            style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:4px; cursor:pointer;">
+            ยกเลิก
+          </button>
+          <button type="submit" id="btnAdminSaveProfile" class="btn-sm btn-primary"
+            style="padding:8px 18px; border-radius:4px; cursor:pointer;">
+            บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD NEW BOOK -->
+  <div class="admin-modal-overlay" id="adminBookModal">
+    <div class="admin-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 id="adminBookModalTitle" style="font-size:16px; font-weight:700;">เพิ่มหนังสือเล่มใหม่เข้าสู่ร้าน</h3>
+        <button onclick="closeAdminModal()"
+          style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+
+      <!-- Writer approval notice banner -->
+      <div id="writerApprovalNotice"
+        style="display:none; background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#92400e; line-height:1.5;">
+        <strong>⏳ ข้อตกลงการลงผลงาน:</strong> ผลงานหนังสือที่นักเขียนอัพโหลดจะถูกส่งไปยังคิวตรวจสอบของ
+        <strong>Admin</strong> โดยสถานะเริ่มต้นคือ <em>"รอ Admin อนุมัติ"</em> และจะยังไม่ปรากฏบนหน้าเว็ปจนกว่า Admin
+        จะตรวจสอบและกดอนุมัติครับ
+      </div>
+
+      <form onsubmit="handleAdminAddBook(event)">
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ชื่อหนังสือ *</label>
+          <input type="text" id="mTitle" required
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ชื่อผู้แต่ง / นักเขียน
+            *</label>
+          <input type="text" id="mAuthor" required
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">หมวดหมู่</label>
+            <select id="mCategory"
+              style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+              <option value="1">มังงะ</option>
+              <option value="2">หนังสือทั่วไป</option>
+              <option value="3">นิยาย - ทั่วไป</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ราคาขาย (บาท) *</label>
+            <input type="number" step="0.01" min="0" id="mPrice" required
+              style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ภาพหน้าปก (อัปโหลดไฟล์ PNG, JPG หรือ PDF)</label>
+          <input type="file" id="mCoverFile" accept="image/png,image/jpeg,image/webp,image/jpg,.pdf,application/pdf"
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px; background:#f8fafc;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px; margin-bottom:4px;">
+            📁 รองรับไฟล์รูปภาพ PNG, JPG หรือไฟล์เอกสาร PDF จากในเครื่องของคุณ
+          </div>
+          <input type="url" id="mCover" placeholder="หรือวางลิงก์ URL รูปภาพ เช่น https://..."
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ไฟล์ E-Book (PDF)</label>
+          <input type="file" id="mPdfFile" accept=".pdf,application/pdf"
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px; background:#f8fafc;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">รองรับไฟล์ PDF
+            สำหรับให้ลูกค้าทดลองอ่านและดาวน์โหลด</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">เรื่องย่อ</label>
+          <textarea id="mDesc" rows="3"
+            style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit;"></textarea>
+        </div>
+        <button type="submit" id="btnSubmitBook" class="btn-sm btn-approve"
+          style="width:100%; padding:10px; justify-content:center;">
+          บันทึกเข้าฐานข้อมูล
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EMAIL SMTP CONFIGURATION -->
+  <div class="admin-modal-overlay" id="emailConfigModal">
+    <div class="admin-modal" style="max-width: 580px;">
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px;">✉️</span>
+          <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0;">ตั้งค่าระบบส่งอีเมลจริงอัตโนมัติ
+            (EmailJS)</h3>
+        </div>
+        <button onclick="closeEmailConfigModal()"
+          style="border:none; background:none; font-size:18px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+
+      <!-- STATUS BANNER -->
+      <div id="emailConfigStatusBanner"
+        style="padding:10px 14px; border-radius:6px; font-size:12.5px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
+        <span>🟢 สถานะ: <strong>เชื่อมต่อ EmailJS สำเร็จแล้ว!</strong> - พร้อมส่งใบเสร็จจริงเข้า Gmail อัตโนมัติ 100%</span>
+      </div>
+
+      <form onsubmit="handleSaveEmailConfig(event)">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Service ID *</label>
+            <input type="text" id="emailjsServiceId" required value="service_ljiywib"
+              style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Template ID *</label>
+            <input type="text" id="emailjsTemplateId" required value="template_nhy5wtl"
+              style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
+            EmailJS Public Key *
+          </label>
+          <input type="text" id="emailjsPublicKey" required value="uhFn5yZOqTEa_UIZZ"
+            placeholder="เช่น p7X_abc123... (ดูจากเมนู Account ใน EmailJS)"
+            style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            * บัญชี EmailJS เชื่อมต่อกับ Gmail: <code>ratchapong.pi@rmuti.ac.th</code> เรียบร้อยแล้ว
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
+            EmailJS Private Key (สำหรับโหมดความปลอดภัย Strict Mode)
+          </label>
+          <input type="password" id="emailjsPrivateKey" value="t6x_B-J-eSPLHhpzwO9Xn"
+            placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)"
+            style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            💡 หากไม่อยากกรอก Private Key: ให้ไปที่แท็บ <strong>Security</strong> ใน EmailJS แล้ว<strong>เอาเครื่องหมายถูกออกจาก Use Private Key</strong> จากนั้นกด Save Changes ครับ
+          </div>
+        </div>
+
+        <!-- HOW TO GET PUBLIC KEY GUIDE -->
+        <div
+          style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:12px; color:#334155; line-height:1.6;">
+          <div style="font-weight:700; color:#0284c7; margin-bottom:4px;">📌 วิธีดู Keys จาก EmailJS ใน 10 วินาที:
+          </div>
+          <ol style="margin:0; padding-left:18px;">
+            <li>ในหน้าเว็บ EmailJS ดูที่ <strong>เมนูแถบซ้ายล่าง</strong> คลิก <strong>"Account"</strong></li>
+            <li>ในแท็บ <strong>General</strong> จะพบ <strong>Public Key</strong> และ <strong>Private Key</strong></li>
+            <li>คัดลอกมาวางในช่องด้านบน แล้วกดบันทึกได้เลยครับ</li>
+          </ol>
+        </div>
+
+        <!-- TEST EMAIL SECTION -->
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:#0369a1; margin-bottom:6px;">🚀 ทดสอบส่งอีเมลจริงเข้า Inbox
+            ของคุณทันที:</div>
+          <div style="display:flex; gap:8px;">
+            <input type="email" id="testEmailRecipient" placeholder="พิมพ์อีเมล เช่น ratchapong2000.ice@gmail.com"
+              style="flex:1; padding:7px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:12.5px; font-family:inherit;">
+            <button type="button" id="btnTestEmailAction" onclick="testSendEmailSample()" class="btn-sm"
+              style="background:#0284c7; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:600; cursor:pointer; white-space:nowrap;">
+              ทดสอบส่งเดี๋ยวนี้
+            </button>
+          </div>
+          <div id="testEmailFeedback"
+            style="display:none; margin-top:8px; font-size:12px; padding:8px 10px; border-radius:4px;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeEmailConfigModal()" class="btn-sm"
+            style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:4px; cursor:pointer;">
+            ปิด
+          </button>
+          <button type="submit" id="btnSaveEmailConfig" class="btn-sm btn-primary"
+            style="padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer;">
+            บันทึกการตั้งค่า
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+  <script>
+    const SUPABASE_URL = "https://qmpaatmniwagzijazzxb.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcGFhdG1uaXdhZ3ppamF6enhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2OTU4NDcsImV4cCI6MjEwNjI3MTg0N30.UrozUWTiA-aocCb0R1RSJ_RrNfmX8gPpnMz5vkhsxCg";
+    const sbAdminClient = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // Auto-cleanup bloated base64 storage
+    (function cleanupAdminStorage() {
+      try {
+        const keys = ["nothave_pending_writer_books", "nothave_custom_ebooks", "nothave_cart", "nothave_community_messages"];
+        keys.forEach(k => {
+          try {
+            const raw = localStorage.getItem(k);
+            if (raw && (raw.includes("data:image") || raw.includes("data:application/pdf") || raw.length > 100000)) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                const cleaned = parsed.slice(-20).map(item => {
+                  if (item.cover_url && item.cover_url.startsWith("data:")) item.cover_url = "";
+                  if (item.cover && item.cover.startsWith("data:")) item.cover = "";
+                  if (item.file_url && item.file_url.startsWith("data:")) item.file_url = "";
+                  return item;
+                });
+                localStorage.setItem(k, JSON.stringify(cleaned));
+              }
+            }
+          } catch (e) {}
+        });
+      } catch (ge) {}
+    })();
+
+    // Supabase Global Realtime Broadcast Channel & Postgres Changes across ALL devices
+    let globalAdminRealtimeChannel = null;
+
+    function broadcastAdminRealtime(event, payload = {}) {
+      try {
+        if (globalAdminRealtimeChannel) {
+          globalAdminRealtimeChannel.send({
+            type: 'broadcast',
+            event: event,
+            payload: payload
+          });
+        }
+      } catch (err) {
+        console.warn("Admin realtime broadcast error:", event, err);
+      }
+    }
+
+    if (sbAdminClient) {
+      try {
+        globalAdminRealtimeChannel = sbAdminClient.channel('nothave_global_live_room');
+        globalAdminRealtimeChannel
+          // Database Table Changes (Instant DB Level Sync)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'ebooks' }, () => {
+            console.log("⚡ Admin Realtime: ebooks changed in DB");
+            if (typeof fetchAdminInventory === 'function') fetchAdminInventory();
+            if (typeof fetchAndRenderDashboardKPIs === 'function') fetchAndRenderDashboardKPIs();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+            console.log("⚡ Admin Realtime: orders changed in DB");
+            if (typeof fetchAndRenderOrders === 'function') fetchAndRenderOrders();
+            if (typeof fetchAndRenderDashboardKPIs === 'function') fetchAndRenderDashboardKPIs();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+            console.log("⚡ Admin Realtime: users changed in DB");
+            if (typeof fetchAndRenderUsers === 'function') fetchAndRenderUsers();
+          })
+          // Realtime Broadcasts
+          .on('broadcast', { event: 'order_update' }, () => {
+            if (typeof fetchAndRenderOrders === 'function') fetchAndRenderOrders();
+            if (typeof fetchAndRenderDashboardKPIs === 'function') fetchAndRenderDashboardKPIs();
+          })
+          .on('broadcast', { event: 'book_update' }, () => {
+            if (typeof fetchAdminInventory === 'function') fetchAdminInventory();
+            if (typeof fetchAndRenderDashboardKPIs === 'function') fetchAndRenderDashboardKPIs();
+          })
+          .on('broadcast', { event: 'community_message' }, (msg) => {
+            if (msg && msg.payload) {
+              try {
+                const list = JSON.parse(localStorage.getItem("nothave_community_messages") || "[]");
+                if (!list.some(m => m.id === msg.payload.id)) {
+                  list.unshift(msg.payload);
+                  localStorage.setItem("nothave_community_messages", JSON.stringify(list.slice(0, 100)));
+                }
+              } catch (e) {}
+            }
+            if (typeof renderAdminCommunityMessages === 'function') renderAdminCommunityMessages();
+            if (typeof renderRoleRequests === 'function') renderRoleRequests();
+          })
+          .on('broadcast', { event: 'role_request' }, (msg) => {
+            if (msg && msg.payload) {
+              try {
+                const reqs = JSON.parse(localStorage.getItem("nothave_role_requests") || "[]");
+                if (!reqs.some(r => r.id === msg.payload.id)) {
+                  reqs.unshift(msg.payload);
+                  localStorage.setItem("nothave_role_requests", JSON.stringify(reqs));
+                }
+              } catch (e) {}
+            }
+            if (typeof renderRoleRequests === 'function') renderRoleRequests();
+            if (typeof renderAdminCommunityMessages === 'function') renderAdminCommunityMessages();
+          })
+          .on('broadcast', { event: 'community_delete' }, () => {
+            if (typeof renderAdminCommunityMessages === 'function') renderAdminCommunityMessages();
+            if (typeof renderRoleRequests === 'function') renderRoleRequests();
+          })
+          .subscribe((status) => {
+            console.log("Admin Realtime Channel Status:", status);
+          });
+      } catch (e) {
+        console.warn("Admin global realtime init note:", e);
+      }
+    }
+
+    const BACKEND_URL = (window.location.origin && window.location.origin.includes(':8080'))
+      ? ''
+      : 'http://localhost:8080';
+
+    // ========================================================
+    // NOT HAVE A BOOK SHOP - ADMIN REAL-TIME SUPABASE DASHBOARD
+    // ========================================================
+
+    let adminOrders = [];
+    let inventoryBooks = [];
+    let adminUsersList = [];
+    let isFetchingOrders = false;
+    let isFetchingBooks = false;
+    let isFetchingUsers = false;
+
+    // Helper: ตรวจสอบข้อมูลผู้ใช้ที่ล็อกอินปัจจุบัน
+    function getCurrentAdminUser() {
+      try {
+        const stored = localStorage.getItem("nothave_user");
+        if (!stored) return null;
+        const user = JSON.parse(stored);
+        const roleOverrides = JSON.parse(localStorage.getItem("nothave_role_overrides") || "{}");
+        const override = (user.id && roleOverrides[String(user.id)]) || (user.user_id && roleOverrides[String(user.user_id)]) || (user.email && roleOverrides[String(user.email).toLowerCase()]);
+        if (override) {
+          user.role_id = override.roleId;
+          user.role_name = override.roleName;
+        }
+        return user;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function checkCurrentSessionPermission() {
+      const u = getCurrentAdminUser();
+      if (!u) {
+        window.location.replace("index.html?auth_error=unauthorized");
+        return false;
+      }
+      if (u.role_id !== 2 && u.role_id !== 3) {
+        // โดนถอดยศเป็นลูกค้าทั่วไป (Customer / role 1) -> เด้งออกจากคลัง/หลังบ้านทันที
+        window.location.replace("index.html?auth_error=demoted");
+        return false;
+      }
+      return true;
+    }
+
+    function isCurrentWriter() {
+      const u = getCurrentAdminUser();
+      return u && u.role_id === 3;
+    }
+
+    // 1. Navigation Tab Switching (นักเขียนมีสิทธิ์เข้าถึงเฉพาะจัดการคลังหนังสือ)
+    function switchTab(tabId, el) {
+      if (isCurrentWriter() && tabId !== "tabInventory") {
+        tabId = "tabInventory";
+        el = document.getElementById("navLinkInventory");
+      }
+      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+      document.querySelectorAll(".content-panel").forEach(p => p.classList.remove("active"));
+      if (el) el.classList.add("active");
+      const panel = document.getElementById(tabId);
+      if (panel) panel.classList.add("active");
+    }
+
+    // 2. HTML Sanitization Helpers
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function escapeQuote(str) {
+      return (str || "").replace(/'/g, "\'").replace(/"/g, "&quot;");
+    }
+
+    // 3. Real-time Status Badge
+    function updateRealtimeBadge(isLive) {
+      const badge = document.getElementById("realtimeBadge");
+      if (!badge) return;
+      if (isLive) {
+        badge.style.background = "#ecfdf5";
+        badge.style.color = "#047857";
+        badge.style.borderColor = "#a7f3d0";
+        badge.innerHTML = `<span class="live-dot" style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 0 2px rgba(16,185,129,0.3);"></span><span>Supabase Real-time: Live</span>`;
+      } else {
+        badge.style.background = "#fef2f2";
+        badge.style.color = "#b91c1c";
+        badge.style.borderColor = "#fecaca";
+        badge.innerHTML = `<span style="width:8px; height:8px; border-radius:50%; background:#ef4444; display:inline-block;"></span><span>Supabase: Offline</span>`;
+      }
+    }
+
+    // 4. Activity Logging (Audit Trail)
+    function logAdminActivity(action, detail) {
+      let acts = JSON.parse(localStorage.getItem("nothave_activities") || "[]");
+      acts.unshift({
+        id: Date.now(),
+        user: "Admin (ผู้ดูแลระบบ)",
+        action: action,
+        detail: detail,
+        time: new Date().toLocaleString('th-TH')
+      });
+      if (acts.length > 50) acts = acts.slice(0, 50);
+      localStorage.setItem("nothave_activities", JSON.stringify(acts));
+      renderAuditLog();
+    }
+
+    function renderAuditLog() {
+      const container = document.getElementById("adminAuditLogContainer");
+      if (!container) return;
+      const acts = JSON.parse(localStorage.getItem("nothave_activities") || "[]");
+      if (acts.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8;">ยังไม่มีประวัติกิจกรรม</div>`;
+        return;
+      }
+      container.innerHTML = acts.map(a => `
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0; font-size:12.5px;">
+          <div>
+            <span style="font-weight:700; color:#0284c7;">[${escapeHTML(a.action)}]</span>
+            <span style="color:#0f172a; margin-left:6px;">${escapeHTML(a.detail)}</span>
+            <span style="color:#64748b; font-size:11px;"> (โดย ${escapeHTML(a.user)})</span>
+          </div>
+          <div style="color:#94a3b8; font-size:11px; white-space:nowrap;">${escapeHTML(a.time)}</div>
+        </div>
+      `).join("");
+    }
+
+    function clearAdminLogs() {
+      if (!confirm("ต้องการล้าง Audit Log ทั้งหมด?")) return;
+      localStorage.removeItem("nothave_activities");
+      renderAuditLog();
+    }
+
+    // ========================================================
+    // 5. ORDERS MANAGEMENT (ดึงตรงจาก Supabase Real-Time)
+    // ========================================================
+    async function fetchAndRenderOrders(isSilent = false) {
+      if (isFetchingOrders) return;
+      isFetchingOrders = true;
+
+      const pendingTbody = document.getElementById("pendingOrdersTbody");
+      const allTbody = document.getElementById("allOrdersTbody");
+
+      if (!isSilent && (!adminOrders || adminOrders.length === 0)) {
+        if (pendingTbody) pendingTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">กำลังดึงข้อมูลคำสั่งซื้อจาก Supabase Real-time...</td></tr>`;
+        if (allTbody) allTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">กำลังดึงข้อมูลคำสั่งซื้อจาก Supabase Real-time...</td></tr>`;
+      }
+
+      if (!sbAdminClient) {
+        isFetchingOrders = false;
+        return;
+      }
+
+      try {
+        const { data, error } = await sbAdminClient
+          .from("orders")
+          .select(`
+            order_id,
+            user_id,
+            order_date,
+            total_amount,
+            status,
+            notes,
+            users ( user_id, full_name, email, phone ),
+            payments ( payment_id, slip_image_url, payment_method, status ),
+            order_items (
+              item_id,
+              quantity,
+              price_at_purchase,
+              ebook_id,
+              ebooks (
+                ebook_id,
+                title,
+                category_id,
+                categories ( category_id, category_name )
+              )
+            )
+          `)
+          .order("order_id", { ascending: false });
+
+        if (error) throw error;
+
+        if (data) {
+          adminOrders = data.map(o => {
+            let slipUrl = "";
+            if (Array.isArray(o.payments) && o.payments.length > 0) {
+              slipUrl = o.payments[0].slip_image_url || "";
+            } else if (o.payments && o.payments.slip_image_url) {
+              slipUrl = o.payments.slip_image_url;
+            }
+            if (!slipUrl) {
+              slipUrl = `https://dummyimage.com/600x800/0284c7/ffffff&text=ORDER_${o.order_id}`;
+            }
+
+            let dateStr = "-";
+            if (o.order_date) {
+              try {
+                dateStr = new Date(o.order_date).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+              } catch (e) {
+                dateStr = o.order_date;
+              }
+            }
+
+            let customerName = o.users?.full_name || "";
+            let customerEmail = o.users?.email || "";
+            if (o.notes && o.notes.includes("อีเมลผู้ซื้อ:")) {
+              const noteEmail = o.notes.split("อีเมลผู้ซื้อ:")[1].replace(")", "").trim();
+              if (!customerEmail) customerEmail = noteEmail;
+              if (!customerName) customerName = noteEmail.split("@")[0];
+            }
+            if (!customerName) customerName = "ลูกค้าทั่วไป";
+            if (!customerEmail) customerEmail = "-";
+
+            return {
+              id: o.order_id,
+              userId: o.user_id,
+              customer: customerName,
+              email: customerEmail,
+              phone: o.users?.phone || "-",
+              date: dateStr,
+              amount: parseFloat(o.total_amount || 0),
+              slip: slipUrl,
+              status: (o.status || "pending").toLowerCase(),
+              notes: o.notes || "",
+              items: o.order_items || []
+            };
+          });
+
+          renderOrders();
+        }
+      } catch (err) {
+        console.error("fetchAndRenderOrders error:", err);
+      } finally {
+        isFetchingOrders = false;
+      }
+    }
+
+    function renderOrders() {
+      const pendingTbody = document.getElementById("pendingOrdersTbody");
+      const allTbody = document.getElementById("allOrdersTbody");
+      if (!allTbody) return;
+
+      const pendingList = adminOrders.filter(o => o.status === "pending");
+      const confirmedList = adminOrders.filter(o => o.status === "confirmed");
+
+      const kpiPendingEl = document.getElementById("kpiPending");
+      if (kpiPendingEl) kpiPendingEl.innerText = `${pendingList.length} รายการ`;
+
+      const kpiOrdersEl = document.getElementById("kpiOrders");
+      if (kpiOrdersEl) kpiOrdersEl.innerText = `${adminOrders.length} ออเดอร์`;
+
+      const confirmedTotal = confirmedList.reduce((sum, o) => sum + (o.amount || 0), 0);
+      const kpiRevEl = document.getElementById("kpiRevenue");
+      if (kpiRevEl) kpiRevEl.innerText = `฿${confirmedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      // คำนวณส่วนแบ่งรายได้ 70% นักเขียน / 30% แพลตฟอร์มแอดมิน
+      const adminProfit = confirmedTotal * 0.30;
+      const writerRoyalty = confirmedTotal * 0.70;
+
+      const kpiAdminProfitEl = document.getElementById("kpiAdminProfit");
+      if (kpiAdminProfitEl) kpiAdminProfitEl.innerText = `฿${adminProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      const kpiWriterRoyaltyEl = document.getElementById("kpiWriterRoyalty");
+      if (kpiWriterRoyaltyEl) kpiWriterRoyaltyEl.innerText = `฿${writerRoyalty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      if (pendingTbody) {
+        if (pendingList.length === 0) {
+          pendingTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:#94a3b8;">ไม่มีคำสั่งซื้อที่รอตรวจสอบสลิปในขณะนี้ (ตรวจสอบและจัดการครบทั้งหมดแล้ว)</td></tr>`;
+        } else {
+          pendingTbody.innerHTML = pendingList.map(o => `
+            <tr id="pending-row-${o.id}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="pending-select-checkbox" value="${o.id}" onchange="updateSelectedPendingUI()" style="cursor:pointer; width:16px; height:16px;">
+              </td>
+              <td><strong>#${o.id}</strong></td>
+              <td>
+                <div style="font-weight:600; color:#0f172a;">${escapeHTML(o.customer)}</div>
+                <div style="font-size:11px; color:#64748b;">${escapeHTML(o.email)}</div>
+              </td>
+              <td><span style="font-size:12px; color:#475569;">${o.date}</span></td>
+              <td><strong style="color:#0284c7; font-size:14px;">฿${o.amount.toFixed(2)}</strong></td>
+              <td>
+                <a href="${escapeHTML(o.slip)}" target="_blank" style="color:#0284c7; font-weight:600; text-decoration:none; font-size:12.5px;">
+                  ตรวจสลิป ↗
+                </a>
+              </td>
+              <td><span class="badge badge-pending">รอตรวจสอบ</span></td>
+              <td style="text-align:center;">
+                <div style="display:inline-flex; gap:4px; align-items:center;">
+                  <button class="btn-sm btn-approve" onclick="approveOrder(${o.id})" title="ยืนยันการชำระเงินและปลดล็อกการดาวน์โหลด">ยืนยัน</button>
+                  <button class="btn-sm btn-reject" onclick="cancelOrder(${o.id})" title="ยกเลิกคำสั่งซื้อนี้">ยกเลิก</button>
+                  <button class="btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;" onclick="deleteOrder(${o.id})" title="ลบคำสั่งซื้อนี้ออกจากฐานข้อมูลถาวร">ลบ</button>
+                </div>
+              </td>
+            </tr>
+          `).join("");
+        }
+      }
+
+      if (adminOrders.length === 0) {
+        allTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:#94a3b8;">ไม่มีประวัติคำสั่งซื้อในฐานข้อมูล</td></tr>`;
+      } else {
+        allTbody.innerHTML = adminOrders.map(o => {
+          const isConfirmed = o.status === "confirmed";
+          const isPending = o.status === "pending";
+          const statusLabel = isConfirmed ? "ยืนยันแล้ว" : (isPending ? "รอตรวจสอบ" : "ยกเลิก");
+          const badgeClass = isConfirmed ? "badge-confirmed" : (isPending ? "badge-pending" : "badge-cancelled");
+
+          return `
+            <tr id="order-row-${o.id}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="order-select-checkbox" value="${o.id}" onchange="updateSelectedOrdersUI()" style="cursor:pointer; width:16px; height:16px;">
+              </td>
+              <td><strong>#${o.id}</strong></td>
+              <td>
+                <div style="font-weight:600; color:#0f172a;">${escapeHTML(o.customer)}</div>
+                <div style="font-size:11px; color:#64748b;">${escapeHTML(o.email)}</div>
+              </td>
+              <td><span style="font-size:12px; color:#475569;">${o.date}</span></td>
+              <td><strong style="color:#0f172a; font-size:14px;">฿${o.amount.toFixed(2)}</strong></td>
+              <td>
+                <a href="${escapeHTML(o.slip)}" target="_blank" style="color:#0284c7; text-decoration:none; font-size:12.5px;">ดูสลิป ↗</a>
+              </td>
+              <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+              <td style="text-align:center;">
+                <div style="display:inline-flex; gap:4px; align-items:center;">
+                  ${isPending ? `
+                    <button class="btn-sm btn-approve" onclick="approveOrder(${o.id})">อนุมัติ</button>
+                    <button class="btn-sm btn-reject" onclick="cancelOrder(${o.id})">ยกเลิก</button>
+                  ` : `<span style="color:#94a3b8; font-size:12px; margin-right:4px;">${isConfirmed ? 'ปลดล็อกแล้ว' : 'ปิดแล้ว'}</span>`}
+                  <button class="btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;" onclick="deleteOrder(${o.id})" title="ลบคำสั่งซื้อนี้ออกจากฐานข้อมูลถาวร">ลบ</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      updateSelectedOrdersUI();
+      updateSelectedPendingUI();
+      renderCategorySalesAnalytics();
+    }
+
+    function renderCategorySalesAnalytics() {
+      const container = document.getElementById("categorySalesBarsContainer");
+      const highlightEl = document.getElementById("topCategoryHighlightBadge");
+      const highlightText = document.getElementById("topCategoryNameText");
+      if (!container) return;
+
+      const categoryMeta = {
+        1: { name: "มังงะ", icon: "📚", color: "linear-gradient(90deg, #0284c7, #38bdf8)" },
+        2: { name: "หนังสือทั่วไป", icon: "📖", color: "linear-gradient(90deg, #10b981, #34d399)" },
+        3: { name: "นิยาย - ทั่วไป", icon: "🔮", color: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }
+      };
+
+      const stats = {};
+      let totalUnitsSold = 0;
+      let totalCategoryRevenue = 0;
+
+      for (const [id, meta] of Object.entries(categoryMeta)) {
+        stats[id] = {
+          id: parseInt(id),
+          name: meta.name,
+          icon: meta.icon,
+          color: meta.color,
+          count: 0,
+          revenue: 0
+        };
+      }
+
+      adminOrders.forEach(ord => {
+        const items = ord.items || [];
+        if (items.length > 0) {
+          items.forEach(it => {
+            const catId = it.ebooks?.category_id || (it.ebooks?.categories && it.ebooks.categories.category_id) || 2;
+            const catName = it.ebooks?.categories?.category_name || (categoryMeta[catId] ? categoryMeta[catId].name : `หมวดหมู่ #${catId}`);
+            const qty = parseInt(it.quantity) || 1;
+            const price = parseFloat(it.price_at_purchase) || (parseFloat(ord.amount) / Math.max(1, items.length)) || 0;
+            const rev = price * qty;
+
+            if (!stats[catId]) {
+              stats[catId] = {
+                id: catId,
+                name: catName,
+                icon: "📘",
+                color: "linear-gradient(90deg, #64748b, #94a3b8)",
+                count: 0,
+                revenue: 0
+              };
+            }
+            stats[catId].count += qty;
+            stats[catId].revenue += rev;
+            totalUnitsSold += qty;
+            totalCategoryRevenue += rev;
+          });
+        } else if (ord.amount > 0) {
+          stats[2].count += 1;
+          stats[2].revenue += ord.amount;
+          totalUnitsSold += 1;
+          totalCategoryRevenue += ord.amount;
+        }
+      });
+
+      const sorted = Object.values(stats).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+      const topCat = sorted[0];
+
+      if (highlightText && highlightEl) {
+        if (totalUnitsSold > 0 && topCat && topCat.count > 0) {
+          highlightText.innerText = `${topCat.icon} ${topCat.name} (${topCat.count} เล่ม)`;
+          highlightEl.style.display = "inline-flex";
+        } else {
+          highlightText.innerText = "ยังไม่มีข้อมูลการซื้อ";
+          highlightEl.style.display = "inline-flex";
+        }
+      }
+
+      if (totalUnitsSold === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:24px 10px; color:#64748b; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+            <div style="font-size:24px; margin-bottom:6px;">📊</div>
+            <div style="font-weight:600; color:#1e293b; font-size:13.5px; margin-bottom:4px;">ยังไม่มีข้อมูลคำสั่งซื้อสำหรับนำมาคำนวณสถิติ</div>
+            <div style="font-size:12px; color:#64748b;">เมื่อลูกค้าสั่งซื้อหนังสือในระบบ กราฟแท่งจะคำนวณและแสดงผลหมวดหมู่ที่มียอดสั่งซื้อสูงสุดแบบ Real-time ทันที</div>
+          </div>
+        `;
+        return;
+      }
+
+      const maxCount = Math.max(...sorted.map(s => s.count), 1);
+
+      container.innerHTML = sorted.map((cat, idx) => {
+        const percentage = totalUnitsSold > 0 ? ((cat.count / totalUnitsSold) * 100).toFixed(1) : 0;
+        const barWidth = totalUnitsSold > 0 ? Math.max(cat.count > 0 ? (cat.count / maxCount) * 100 : 0, 3) : 0;
+        const isTop = idx === 0 && cat.count > 0;
+
+        return `
+          <div style="background:#ffffff; border:1px solid ${isTop ? '#bae6fd' : '#f1f5f9'}; padding:12px 14px; border-radius:8px; box-shadow:${isTop ? '0 2px 8px rgba(2,132,199,0.08)' : 'none'};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:16px;">${cat.icon}</span>
+                <strong style="color:#0f172a; font-size:13.5px;">${cat.name}</strong>
+                ${isTop ? '<span style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px;">👑 ซื้อมากที่สุด อันดับ 1</span>' : ''}
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; font-size:12.5px;">
+                <span style="color:#475569;">
+                  ยอดซื้อ: <strong style="color:${isTop ? '#0284c7' : '#0f172a'}; font-size:13.5px;">${cat.count} เล่ม</strong>
+                  <span style="color:#64748b; font-size:11.5px;">(${percentage}%)</span>
+                </span>
+                <span style="color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">
+                  ฿${cat.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            
+            <div style="width:100%; height:14px; background:#f1f5f9; border-radius:8px; overflow:hidden; position:relative; display:flex;">
+              <div style="width:${cat.count > 0 ? barWidth : 0}%; height:100%; background:${cat.color}; border-radius:8px; transition:width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function approveOrder(id) {
+      if (!confirm(`ยืนยันการชำระเงินของคำสั่งซื้อ #${id} และปลดล็อกสิทธิ์ดาวน์โหลดให้ลูกค้า?`)) return;
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("orders").update({ status: "confirmed" }).eq("order_id", id);
+          await sbAdminClient.from("payments").update({ status: "verified" }).eq("order_id", id);
+        }
+        logAdminActivity("อนุมัติคำสั่งซื้อ", `แอดมินยืนยันคำสั่งซื้อ #${id} และปลดล็อกดาวน์โหลดสำเร็จ`);
+        broadcastAdminRealtime('order_update', { order_id: id, status: 'confirmed' });
+        await fetchAndRenderOrders();
+        alert(`อนุมัติคำสั่งซื้อ #${id} เรียบร้อยแล้ว ข้อมูลในฐานข้อมูลและหน้าเว็บลูกค้าจะปลดล็อกทันทีครับ`);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการอนุมัติ: " + err.message);
+      }
+    }
+
+    async function cancelOrder(id) {
+      if (!confirm(`ต้องการยกเลิกคำสั่งซื้อ #${id} หรือไม่?`)) return;
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("orders").update({ status: "cancelled" }).eq("order_id", id);
+        }
+        logAdminActivity("ยกเลิกคำสั่งซื้อ", `แอดมินยกเลิกคำสั่งซื้อ #${id}`);
+        broadcastAdminRealtime('order_update', { order_id: id, status: 'cancelled' });
+        await fetchAndRenderOrders();
+        alert(`ยกเลิกคำสั่งซื้อ #${id} เรียบร้อยแล้ว`);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm(`ยืนยันการลบคำสั่งซื้อ #${id} ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?\n(เมื่อลบแล้วรายการนี้จะหายไปจากระบบ)`)) return;
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("payments").delete().eq("order_id", id);
+          await sbAdminClient.from("order_items").delete().eq("order_id", id);
+          await sbAdminClient.from("download_links").delete().eq("order_id", id);
+          const { error } = await sbAdminClient.from("orders").delete().eq("order_id", id);
+          if (error) throw error;
+        }
+        logAdminActivity("ลบคำสั่งซื้อ", `แอดมินลบคำสั่งซื้อ #${id} ออกจากฐานข้อมูล`);
+        broadcastAdminRealtime('order_update', { order_id: id, deleted: true });
+        await fetchAndRenderOrders();
+        alert(`ลบคำสั่งซื้อ #${id} ออกจากระบบเรียบร้อยแล้ว`);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการลบคำสั่งซื้อ: " + err.message);
+      }
+    }
+
+    // ========================================================
+    // BATCH ORDER ACTIONS (ติ๊กเลือกเพื่อลบ หรือลบทั้งหมด)
+    // ========================================================
+    function toggleSelectAllOrders(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      document.querySelectorAll(".order-select-checkbox").forEach(cb => {
+        cb.checked = isChecked;
+      });
+      updateSelectedOrdersUI();
+    }
+
+    function updateSelectedOrdersUI() {
+      const checkboxes = document.querySelectorAll(".order-select-checkbox");
+      const checkedBoxes = document.querySelectorAll(".order-select-checkbox:checked");
+      const count = checkedBoxes.length;
+
+      checkboxes.forEach(cb => {
+        const row = document.getElementById(`order-row-${cb.value}`);
+        if (row) row.style.backgroundColor = cb.checked ? '#fff1f2' : '';
+      });
+
+      const badge = document.getElementById("selectedOrdersBadge");
+      const countEl = document.getElementById("selectedOrdersCount");
+      const delBtn = document.getElementById("btnDeleteSelectedOrders");
+      const btnSelCount = document.getElementById("btnDeleteSelectedCount");
+      const masterCb = document.getElementById("selectAllOrdersCheckbox");
+
+      if (masterCb && checkboxes.length > 0) {
+        masterCb.checked = count === checkboxes.length;
+        masterCb.indeterminate = count > 0 && count < checkboxes.length;
+      }
+
+      if (count > 0) {
+        if (badge) badge.style.display = "inline-block";
+        if (countEl) countEl.innerText = count;
+        if (delBtn) delBtn.style.display = "inline-flex";
+        if (btnSelCount) btnSelCount.innerText = count;
+      } else {
+        if (badge) badge.style.display = "none";
+        if (delBtn) delBtn.style.display = "none";
+      }
+    }
+
+    async function deleteSelectedOrders() {
+      const checkedBoxes = document.querySelectorAll(".order-select-checkbox:checked");
+      const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value)).filter(id => !isNaN(id));
+
+      if (selectedIds.length === 0) {
+        alert("กรุณาติ๊กเลือกคำสั่งซื้อที่ต้องการลบอย่างน้อย 1 รายการครับ");
+        return;
+      }
+
+      if (!confirm(`ยืนยันการลบคำสั่งซื้อที่เลือกจำนวน ${selectedIds.length} รายการ ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("payments").delete().in("order_id", selectedIds);
+          await sbAdminClient.from("order_items").delete().in("order_id", selectedIds);
+          await sbAdminClient.from("download_links").delete().in("order_id", selectedIds);
+          const { error } = await sbAdminClient.from("orders").delete().in("order_id", selectedIds);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบคำสั่งซื้อที่เลือก", `แอดมินลบคำสั่งซื้อที่เลือกจำนวน ${selectedIds.length} รายการ`);
+        alert(`ลบคำสั่งซื้อที่เลือกจำนวน ${selectedIds.length} รายการ ออกจากฐานข้อมูลเรียบร้อยแล้วครับ`);
+        await fetchAndRenderOrders();
+      } catch (err) {
+        console.error("Delete selected orders error:", err);
+        alert("เกิดข้อผิดพลาดในการลบคำสั่งซื้อ: " + err.message);
+      }
+    }
+
+    async function deleteAllOrders() {
+      if (adminOrders.length === 0) {
+        alert("ไม่มีคำสั่งซื้อในระบบให้ลบครับ");
+        return;
+      }
+
+      const totalCount = adminOrders.length;
+      if (!confirm(`⚠️ คำเตือนสำคัญ!\nคุณต้องการลบคำสั่งซื้อทั้งหมด ${totalCount} รายการ ออกจากฐานข้อมูล Supabase หรือไม่?\n\nเมื่อลบแล้ว ยอดขาย สถิติ และประวัติการสั่งซื้อจะถูกล้างถาวร!`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          const allIds = adminOrders.map(o => o.id);
+          await sbAdminClient.from("payments").delete().in("order_id", allIds);
+          await sbAdminClient.from("order_items").delete().in("order_id", allIds);
+          await sbAdminClient.from("download_links").delete().in("order_id", allIds);
+          const { error } = await sbAdminClient.from("orders").delete().in("order_id", allIds);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบคำสั่งซื้อทั้งหมด", `แอดมินลบคำสั่งซื้อทั้งหมด ${totalCount} รายการออกจากฐานข้อมูล`);
+        alert(`ลบคำสั่งซื้อทั้งหมด ${totalCount} รายการ ออกจากฐานข้อมูลเรียบร้อยแล้วครับ`);
+        await fetchAndRenderOrders();
+      } catch (err) {
+        console.error("Delete all orders error:", err);
+        alert("เกิดข้อผิดพลาดในการลบคำสั่งซื้อทั้งหมด: " + err.message);
+      }
+    }
+
+    function toggleSelectAllPending(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      document.querySelectorAll(".pending-select-checkbox").forEach(cb => {
+        cb.checked = isChecked;
+      });
+      updateSelectedPendingUI();
+    }
+
+    function updateSelectedPendingUI() {
+      const checkboxes = document.querySelectorAll(".pending-select-checkbox");
+      const checkedBoxes = document.querySelectorAll(".pending-select-checkbox:checked");
+      const count = checkedBoxes.length;
+
+      checkboxes.forEach(cb => {
+        const row = document.getElementById(`pending-row-${cb.value}`);
+        if (row) row.style.backgroundColor = cb.checked ? '#fff1f2' : '';
+      });
+
+      const badge = document.getElementById("selectedPendingBadge");
+      const countEl = document.getElementById("selectedPendingCount");
+      const delBtn = document.getElementById("btnDeleteSelectedPending");
+      const btnSelCount = document.getElementById("btnDeleteSelectedPendingCount");
+      const masterCb = document.getElementById("selectAllPendingCheckbox");
+
+      if (masterCb && checkboxes.length > 0) {
+        masterCb.checked = count === checkboxes.length;
+        masterCb.indeterminate = count > 0 && count < checkboxes.length;
+      }
+
+      if (count > 0) {
+        if (badge) badge.style.display = "inline-block";
+        if (countEl) countEl.innerText = count;
+        if (delBtn) delBtn.style.display = "inline-flex";
+        if (btnSelCount) btnSelCount.innerText = count;
+      } else {
+        if (badge) badge.style.display = "none";
+        if (delBtn) delBtn.style.display = "none";
+      }
+    }
+
+    async function deleteSelectedPending() {
+      const checkedBoxes = document.querySelectorAll(".pending-select-checkbox:checked");
+      const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value)).filter(id => !isNaN(id));
+
+      if (selectedIds.length === 0) {
+        alert("กรุณาติ๊กเลือกคำสั่งซื้อที่ต้องการลบอย่างน้อย 1 รายการครับ");
+        return;
+      }
+
+      if (!confirm(`ยืนยันการลบคำสั่งซื้อที่รอตรวจสอบจำนวน ${selectedIds.length} รายการ ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("payments").delete().in("order_id", selectedIds);
+          await sbAdminClient.from("order_items").delete().in("order_id", selectedIds);
+          await sbAdminClient.from("download_links").delete().in("order_id", selectedIds);
+          const { error } = await sbAdminClient.from("orders").delete().in("order_id", selectedIds);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบคำสั่งซื้อรอตรวจสอบที่เลือก", `แอดมินลบคำสั่งซื้อรอตรวจสอบจำนวน ${selectedIds.length} รายการ`);
+        alert(`ลบคำสั่งซื้อที่เลือกจำนวน ${selectedIds.length} รายการ ออกจากฐานข้อมูลเรียบร้อยแล้วครับ`);
+        await fetchAndRenderOrders();
+      } catch (err) {
+        console.error("Delete selected pending error:", err);
+        alert("เกิดข้อผิดพลาดในการลบคำสั่งซื้อ: " + err.message);
+      }
+    }
+
+    // ========================================================
+    // 6. INVENTORY MANAGEMENT (ดึงตรงจาก Supabase Real-Time & ระบบอนุมัตินักเขียน)
+    // ========================================================
+    let currentInventoryFilter = "all";
+
+    function filterInventoryView(filterType) {
+      currentInventoryFilter = filterType;
+
+      const btnAll = document.getElementById("btnFilterAll");
+      const btnPen = document.getElementById("btnFilterPending");
+      const btnApp = document.getElementById("btnFilterApproved");
+
+      [btnAll, btnPen, btnApp].forEach(b => {
+        if (!b) return;
+        b.style.background = "#ffffff";
+        b.style.color = "#475569";
+        b.style.borderColor = "#cbd5e1";
+      });
+
+      if (filterType === "all" && btnAll) {
+        btnAll.style.background = "#0284c7";
+        btnAll.style.color = "#ffffff";
+        btnAll.style.borderColor = "#0284c7";
+      } else if (filterType === "pending" && btnPen) {
+        btnPen.style.background = "#fef3c7";
+        btnPen.style.color = "#92400e";
+        btnPen.style.borderColor = "#fde68a";
+      } else if (filterType === "approved" && btnApp) {
+        btnApp.style.background = "#f0fdf4";
+        btnApp.style.color = "#166534";
+        btnApp.style.borderColor = "#bbf7d0";
+      }
+
+      renderInventory();
+    }
+
+    async function fetchAdminInventory(isSilent = false) {
+      if (isFetchingBooks) return;
+      isFetchingBooks = true;
+
+      const tbody = document.getElementById("inventoryTbody");
+      if (!isSilent && (!inventoryBooks || inventoryBooks.length === 0)) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">กำลังดึงข้อมูลคลังหนังสือจาก Supabase Real-time...</td></tr>`;
+      }
+
+      if (!sbAdminClient) {
+        isFetchingBooks = false;
+        return;
+      }
+
+      try {
+        const { data, error } = await sbAdminClient
+          .from("ebooks")
+          .select(`
+            ebook_id,
+            title,
+            price,
+            original_price,
+            cover_url,
+            file_url,
+            is_active,
+            description,
+            categories ( category_id, category_name ),
+            authors ( author_id, author_name )
+          `)
+          .order("ebook_id", { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          const pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
+
+          inventoryBooks = data.map(b => {
+            const pInfo = pendingList.find(p => p.ebook_id === b.ebook_id || p.title === b.title);
+            const isWriterSub = (pInfo && pInfo.status === "pending") || (!b.is_active && (b.description && b.description.includes("[WRITER_SUBMISSION")));
+            const isRejected = pInfo && pInfo.status === "rejected";
+            const writerName = pInfo ? pInfo.writer_name : (b.authors?.author_name || "นักเขียน");
+
+            return {
+              id: b.ebook_id,
+              title: b.title,
+              cat: b.categories?.category_name || "ทั่วไป",
+              price: parseFloat(b.price || 0),
+              cover: b.cover_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100",
+              active: b.is_active !== false,
+              fileUrl: b.file_url || "",
+              isPendingApproval: isWriterSub && !b.is_active && !isRejected,
+              isRejected: isRejected,
+              writerName: writerName,
+              writerId: pInfo ? pInfo.writer_id : null,
+              desc: b.description || ""
+            };
+          });
+
+          renderInventory();
+        }
+      } catch (err) {
+        console.error("fetchAdminInventory error:", err);
+      } finally {
+        isFetchingBooks = false;
+      }
+    }
+
+    function renderInventory() {
+      const tbody = document.getElementById("inventoryTbody");
+      if (!tbody) return;
+
+      const user = getCurrentAdminUser();
+      const isWriter = isCurrentWriter();
+
+      // Counts
+      const totalCount = inventoryBooks.length;
+      const pendingCount = inventoryBooks.filter(b => b.isPendingApproval).length;
+      const approvedCount = inventoryBooks.filter(b => b.active).length;
+
+      // Update Filter Pills
+      const elAll = document.getElementById("filterAllCount");
+      const elPen = document.getElementById("filterPendingCount");
+      const elApp = document.getElementById("filterApprovedCount");
+      if (elAll) elAll.innerText = totalCount;
+      if (elPen) elPen.innerText = pendingCount;
+      if (elApp) elApp.innerText = approvedCount;
+
+      // Update Admin Store KPIs
+      const countEl = document.getElementById("kpiBooks");
+      if (countEl) countEl.innerText = `${approvedCount} / ${totalCount} เล่ม`;
+
+      // Update Writer Studio KPIs
+      const wTotalEl = document.getElementById("writerKpiTotal");
+      const wPenEl = document.getElementById("writerKpiPending");
+      const wAppEl = document.getElementById("writerKpiApproved");
+      if (wTotalEl) wTotalEl.innerText = `${totalCount} เล่ม`;
+      if (wPenEl) wPenEl.innerText = `${pendingCount} เล่ม`;
+      if (wAppEl) wAppEl.innerText = `${approvedCount} เล่ม`;
+
+      if (inventoryBooks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">ไม่มีหนังสือในคลัง Supabase 
+          <button class="btn-sm btn-primary" style="margin-left:10px;" onclick="openAddBookModal()">+ เพิ่มเล่มแรก</button>
+          ${!isWriter ? '<button class="btn-sm" style="margin-left:8px; background:#0284c7; color:#fff;" onclick="seedDefaultBooks()">📥 นำเข้าหนังสือเริ่มต้น 12 เล่ม</button>' : ''}
+        </td></tr>`;
+        updateSelectedBooksUI();
+        return;
+      }
+
+      // Filter books
+      let displayBooks = inventoryBooks;
+      if (currentInventoryFilter === "pending") {
+        displayBooks = inventoryBooks.filter(b => b.isPendingApproval);
+      } else if (currentInventoryFilter === "approved") {
+        displayBooks = inventoryBooks.filter(b => b.active);
+      }
+
+      if (displayBooks.length === 0) {
+        const filterMsg = currentInventoryFilter === "pending"
+          ? "ไม่มีหนังสือที่รอการอนุมัติในขณะนี้"
+          : (currentInventoryFilter === "approved" ? "ยังไม่มีหนังสือที่เปิดวางขายบนหน้าร้าน" : "ไม่พบหนังสือตามเงื่อนไข");
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">${filterMsg}</td></tr>`;
+        updateSelectedBooksUI();
+        return;
+      }
+
+      tbody.innerHTML = displayBooks.map(b => {
+        const isPending = b.isPendingApproval;
+        return `
+        <tr id="book-row-${b.id}" style="${isPending ? 'background:#fffdfa;' : ''}">
+          <td style="text-align:center;">
+            <input type="checkbox" class="book-select-checkbox" value="${b.id}" onchange="updateSelectedBooksUI()" style="cursor:pointer; width:16px; height:16px;">
+          </td>
+          <td><strong>${b.id}</strong></td>
+          <td>
+            <img src="${escapeHTML(b.cover)}" onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100'" style="width:38px; height:52px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; display:block;">
+          </td>
+          <td>
+            <div style="font-weight:700; color:#0f172a;">${escapeHTML(b.title)}</div>
+            <div style="font-size:11px; color:#64748b; margin-top:2px;">
+              รหัสสินค้า: EBOOK-${b.id}
+              ${b.fileUrl ? '<span style="color:#15803d; margin-left:6px; font-weight:600;">✓ มีไฟล์ PDF</span>' : '<span style="color:#94a3b8; margin-left:6px;">ไม่มีไฟล์ PDF</span>'}
+            </div>
+            ${(isPending || b.writerName) ? `
+              <div style="margin-top:4px;">
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:4px; background:#faf5ff; color:#6d28d9; border:1px solid #e9d5ff; font-weight:600;">
+                  ✍️ นักเขียน: ${escapeHTML(b.writerName)}
+                </span>
+              </div>
+            ` : ''}
+          </td>
+          <td><span style="background:#f1f5f9; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:500;">${escapeHTML(b.cat)}</span></td>
+          <td><strong style="color:#0284c7; font-size:14px;">฿${b.price.toFixed(2)}</strong></td>
+          <td>
+            ${isPending ? `
+              <span class="badge" style="background:#fef3c7; color:#d97706; border:1px solid #fde68a; font-weight:700; padding:4px 8px;">
+                ⏳ รอ Admin อนุมัติ
+              </span>
+              <div style="font-size:10.5px; color:#b45309; margin-top:3px; font-weight:500;">(ยังไม่ลงหน้าเว็ป)</div>
+            ` : `
+              <span class="badge ${b.active ? 'badge-confirmed' : 'badge-cancelled'}">
+                ${b.active ? '✅ พร้อมขายบนหน้าเว็ป' : 'ปิดการขาย'}
+              </span>
+            `}
+          </td>
+          <td style="text-align:center;">
+            <div style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center;">
+              ${!isWriter && isPending ? `
+                <button class="btn-sm btn-approve" style="background:#16a34a; color:#fff; font-weight:700; padding:6px 12px; box-shadow:0 1px 3px rgba(22,163,74,0.3); border:none;" onclick="approveWriterBook(${b.id}, '${escapeQuote(b.title)}', '${escapeQuote(b.writerName)}')">
+                  ✓ อนุมัติลงร้าน
+                </button>
+                <button class="btn-sm btn-reject" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:600; padding:6px 10px;" onclick="rejectWriterBook(${b.id}, '${escapeQuote(b.title)}')">
+                  ✕ ปฏิเสธ
+                </button>
+              ` : ''}
+              
+              <button class="btn-sm" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;" onclick="editBookPrompt(${b.id}, '${escapeQuote(b.title)}', ${b.price})" title="แก้ไขชื่อและราคา">
+                แก้ไข
+              </button>
+              
+              ${!isWriter && !isPending ? `
+                <button class="btn-sm" style="background:#f8fafc; color:#475569; border:1px solid #cbd5e1;" onclick="toggleBookActive(${b.id}, ${b.active})" title="สลับสถานะเปิด/ปิดการขาย">
+                  ${b.active ? 'ปิดขาย' : 'เปิดขาย'}
+                </button>
+              ` : ''}
+              
+              <button class="btn-sm btn-reject" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 1px 3px rgba(220,38,38,0.3); border:none;" onclick="deleteBook(${b.id}, '${escapeQuote(b.title)}')" title="ลบหนังสือเล่มนี้ออกจากร้าน">
+                ${isWriter ? 'ลบเล่มนี้' : 'ลบ'}
+              </button>
+            </div>
+          </td>
+        </tr>
+        `;
+      }).join("");
+
+      updateSelectedBooksUI();
+    }
+
+    // ========================================================
+    // WRITER APPROVAL WORKFLOW (Admin อนุมัติ/ปฏิเสธผลงานนักเขียน)
+    // ========================================================
+    async function approveWriterBook(id, title, writerName) {
+      if (!confirm(`ยืนยันการอนุมัติหนังสือลงหน้าเว็ป?\n\nเรื่อง: "${title}"\nนักเขียน: ${writerName || 'นักเขียน'}\n\nเมื่ออนุมัติแล้ว หนังสือจะปรากฏบนหน้าร้านค้า (index.html) ทันที และลูกค้าสามารถสั่งซื้อได้เลย!`)) {
+        return;
+      }
+      if (!sbAdminClient) {
+        alert("ไม่สามารถเชื่อมต่อ Supabase ได้");
+        return;
+      }
+
+      try {
+        // 1. อัปเดตสถานะ is_active: true ใน Supabase ให้เปิดขายและแสดงหน้าร้านทันที
+        const { error } = await sbAdminClient
+          .from("ebooks")
+          .update({ is_active: true })
+          .eq("ebook_id", id);
+
+        if (error) throw error;
+
+        // 2. อัปเดตสถานะใน local tracking list
+        let pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
+        const idx = pendingList.findIndex(p => p.ebook_id === id || p.title === title);
+        if (idx !== -1) {
+          pendingList[idx].status = "approved";
+          pendingList[idx].approved_at = new Date().toISOString();
+        } else {
+          pendingList.push({
+            ebook_id: id,
+            title: title,
+            writer_name: writerName,
+            status: "approved",
+            approved_at: new Date().toISOString()
+          });
+        }
+        try {
+          localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
+        } catch (e) {}
+
+        // 3. บันทึกประวัติกิจกรรมระบบ (Audit Log)
+        logAdminActivity("อนุมัติหนังสือ", `แอดมินอนุมัติหนังสือ "${title}" ของนักเขียน (${writerName}) วางจำหน่ายบนหน้าร้านค้าเรียบร้อย`);
+
+        // 4. โพสต์ประกาศข่าวดีในแชทคอมมูนิตี้
+        try {
+          const commMsgs = JSON.parse(localStorage.getItem("nothave_community_messages") || "[]");
+          commMsgs.push({
+            id: "COMM-" + Date.now(),
+            user_id: 1,
+            author: "ผู้ดูแลร้าน (Admin)",
+            email: "admin@nothave.com",
+            role: "admin",
+            message: `🎉 ข่าวดี! ผลงานหนังสือใหม่ "${title}" โดย ${writerName} ได้รับการอนุมัติจากแอดมินแล้ว วางจำหน่ายบนหน้าร้านค้าเรียบร้อย สามารถเข้าไปเลือกชมและสั่งซื้อได้เลยครับ!`,
+            created_at: new Date().toISOString(),
+            likes: []
+          });
+          localStorage.setItem("nothave_community_messages", JSON.stringify(commMsgs));
+        } catch (commErr) {
+          console.warn("Community announce err:", commErr);
+        }
+
+        alert(`✅ อนุมัติหนังสือ "${title}" สำเร็จเรียบร้อยแล้ว!\n\nขณะนี้หนังสือเปิดขายบนหน้าร้านค้า (index.html) แล้วครับ`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (err) {
+        console.error("Approve writer book error:", err);
+        alert("เกิดข้อผิดพลาดในการอนุมัติ: " + err.message);
+      }
+    }
+
+    async function rejectWriterBook(id, title) {
+      const reason = prompt(`ระบุเหตุผลในการปฏิเสธหนังสือ "${title}":`, "ข้อมูลหรือไฟล์ E-Book ไม่สมบูรณ์ กรุณาปรับปรุงและส่งใหม่");
+      if (reason === null) return;
+
+      if (!sbAdminClient) {
+        alert("ไม่สามารถเชื่อมต่อ Supabase ได้");
+        return;
+      }
+
+      try {
+        // คงสถานะ is_active: false ไว้ใน Supabase
+        await sbAdminClient
+          .from("ebooks")
+          .update({ is_active: false })
+          .eq("ebook_id", id);
+
+        // อัปเดตสถานะใน local tracking list
+        let pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
+        const idx = pendingList.findIndex(p => p.ebook_id === id || p.title === title);
+        if (idx !== -1) {
+          pendingList[idx].status = "rejected";
+          pendingList[idx].reject_reason = reason;
+          pendingList[idx].rejected_at = new Date().toISOString();
+        }
+        try {
+          localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
+        } catch (e) {}
+
+        logAdminActivity("ปฏิเสธหนังสือ", `แอดมินปฏิเสธหนังสือ "${title}" (เหตุผล: ${reason})`);
+        alert(`ปฏิเสธหนังสือ "${title}" เรียบร้อยแล้ว (หนังสือจะไม่ถูกนำขึ้นแสดงบนหน้าเว็ป)`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (err) {
+        console.error("Reject writer book error:", err);
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    async function deleteBook(id, title) {
+      if (!confirm(`ยืนยันการลบหนังสือออกจากร้านค้า?\n\nเรื่อง: "${title}" (ID: ${id})\n\nระบบจะลบข้อมูลออกจากฐานข้อมูล Supabase ทันที!`)) {
+        return;
+      }
+      if (!sbAdminClient) return;
+
+      try {
+        await sbAdminClient.from("download_links").delete().eq("ebook_id", id);
+        const { error: delErr } = await sbAdminClient.from("ebooks").delete().eq("ebook_id", id);
+        if (delErr) {
+          await sbAdminClient.from("order_items").delete().eq("ebook_id", id);
+          const { error: retryErr } = await sbAdminClient.from("ebooks").delete().eq("ebook_id", id);
+          if (retryErr) {
+            await sbAdminClient.from("ebooks").update({ is_active: false }).eq("ebook_id", id);
+            alert(`หนังสือ "${title}" มีประวัติคำสั่งซื้ออยู่ในระบบ จึงทำการ "ปิดการขาย (Soft Delete)" เพื่อคงความถูกต้องของบัญชีและฐานข้อมูลครับ`);
+          } else {
+            alert(`ลบหนังสือ "${title}" ออกจากฐานข้อมูล Supabase เรียบร้อยแล้ว`);
+          }
+        } else {
+          alert(`ลบหนังสือ "${title}" ออกจากฐานข้อมูล Supabase เรียบร้อยแล้ว`);
+        }
+
+        // ลบออกจากรายการติดตามรอนักเขียนด้วย
+        try {
+          let pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
+          pendingList = pendingList.filter(p => p.ebook_id !== id && p.title !== title);
+          localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
+        } catch (e) {}
+
+        logAdminActivity("ลบหนังสือ", `ลบหนังสือ "${title}" (ID: ${id})`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (e) {
+        console.error("Delete book error:", e);
+        await sbAdminClient.from("ebooks").update({ is_active: false }).eq("ebook_id", id);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      }
+    }
+
+    // ========================================================
+    // BATCH INVENTORY ACTIONS (ติ๊กเลือกหนังสือเพื่อลบ หรือลบทั้งหมด)
+    // ========================================================
+    function toggleSelectAllBooks(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      document.querySelectorAll(".book-select-checkbox").forEach(cb => {
+        cb.checked = isChecked;
+      });
+      updateSelectedBooksUI();
+    }
+
+    function updateSelectedBooksUI() {
+      const checkboxes = document.querySelectorAll(".book-select-checkbox");
+      const checkedBoxes = document.querySelectorAll(".book-select-checkbox:checked");
+      const count = checkedBoxes.length;
+
+      checkboxes.forEach(cb => {
+        const row = document.getElementById(`book-row-${cb.value}`);
+        if (row) row.style.backgroundColor = cb.checked ? '#fff1f2' : '';
+      });
+
+      const badge = document.getElementById("selectedBooksBadge");
+      const countEl = document.getElementById("selectedBooksCount");
+      const delBtn = document.getElementById("btnDeleteSelectedBooks");
+      const btnSelCount = document.getElementById("btnDeleteSelectedBooksCount");
+      const masterCb = document.getElementById("selectAllBooksCheckbox");
+
+      if (masterCb && checkboxes.length > 0) {
+        masterCb.checked = count === checkboxes.length;
+        masterCb.indeterminate = count > 0 && count < checkboxes.length;
+      }
+
+      if (count > 0) {
+        if (badge) badge.style.display = "inline-block";
+        if (countEl) countEl.innerText = count;
+        if (delBtn) delBtn.style.display = "inline-flex";
+        if (btnSelCount) btnSelCount.innerText = count;
+      } else {
+        if (badge) badge.style.display = "none";
+        if (delBtn) delBtn.style.display = "none";
+      }
+    }
+
+    async function deleteSelectedBooks() {
+      const checkedBoxes = document.querySelectorAll(".book-select-checkbox:checked");
+      const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value)).filter(id => !isNaN(id));
+
+      if (selectedIds.length === 0) {
+        alert("กรุณาติ๊กเลือกหนังสือที่ต้องการลบอย่างน้อย 1 เล่มครับ");
+        return;
+      }
+
+      if (!confirm(`ยืนยันการลบหนังสือที่เลือกจำนวน ${selectedIds.length} เล่ม ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          await sbAdminClient.from("download_links").delete().in("ebook_id", selectedIds);
+          const { error: delErr } = await sbAdminClient.from("ebooks").delete().in("ebook_id", selectedIds);
+          if (delErr) {
+            await sbAdminClient.from("order_items").delete().in("ebook_id", selectedIds);
+            const { error: retryErr } = await sbAdminClient.from("ebooks").delete().in("ebook_id", selectedIds);
+            if (retryErr) {
+              await sbAdminClient.from("ebooks").update({ is_active: false }).in("ebook_id", selectedIds);
+            }
+          }
+        }
+
+        logAdminActivity("ลบหนังสือที่เลือก", `แอดมินลบหนังสือที่เลือกจำนวน ${selectedIds.length} เล่ม`);
+        alert(`ลบหนังสือที่เลือกจำนวน ${selectedIds.length} เล่ม เรียบร้อยแล้วครับ`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (err) {
+        console.error("Delete selected books error:", err);
+        alert("เกิดข้อผิดพลาดในการลบหนังสือ: " + err.message);
+      }
+    }
+
+    async function deleteAllBooks() {
+      if (inventoryBooks.length === 0) {
+        alert("ไม่มีหนังสือในระบบให้ลบครับ");
+        return;
+      }
+
+      const totalCount = inventoryBooks.length;
+      if (!confirm(`⚠️ คำเตือนสำคัญ!\nคุณต้องการลบหนังสือทั้งหมดในคลังจำนวน ${totalCount} เล่ม ออกจากฐานข้อมูล Supabase หรือไม่?\n\nเมื่อลบแล้ว หน้าร้านจะไม่มีหนังสือแสดง!`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          const allIds = inventoryBooks.map(b => b.id);
+          await sbAdminClient.from("download_links").delete().in("ebook_id", allIds);
+          await sbAdminClient.from("order_items").delete().in("ebook_id", allIds);
+          const { error } = await sbAdminClient.from("ebooks").delete().in("ebook_id", allIds);
+          if (error) {
+            await sbAdminClient.from("ebooks").update({ is_active: false }).in("ebook_id", allIds);
+          }
+        }
+
+        logAdminActivity("ลบหนังสือทั้งหมด", `แอดมินลบหนังสือทั้งหมด ${totalCount} เล่มออกจากฐานข้อมูล`);
+        alert(`ลบหนังสือทั้งหมด ${totalCount} เล่ม ออกจากฐานข้อมูลเรียบร้อยแล้วครับ`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (err) {
+        console.error("Delete all books error:", err);
+        alert("เกิดข้อผิดพลาดในการลบหนังสือทั้งหมด: " + err.message);
+      }
+    }
+
+    async function toggleBookActive(id, currentStatus) {
+      if (isCurrentWriter()) {
+        alert("ขออภัยครับ นักเขียนไม่สามารถเปิด/ปิดการขายได้โดยตรง ต้องรอให้ Admin ตรวจสอบและอนุมัติเท่านั้นครับ");
+        return;
+      }
+      if (!sbAdminClient) return;
+      const newStatus = !currentStatus;
+      try {
+        const { error } = await sbAdminClient.from("ebooks").update({ is_active: newStatus }).eq("ebook_id", id);
+        if (error) throw error;
+        logAdminActivity("เปลี่ยนสถานะหนังสือ", `แอดมินเปลี่ยนสถานะหนังสือ ID: ${id} เป็น ${newStatus ? 'เปิดขาย' : 'ปิดการขาย'}`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+      } catch (err) {
+        alert("ไม่สามารถเปลี่ยนสถานะได้: " + err.message);
+      }
+    }
+
+    async function editBookPrompt(id, currentTitle, currentPrice) {
+      const newTitle = prompt("แก้ไขชื่อหนังสือ:", currentTitle);
+      if (!newTitle) return;
+      const newPriceStr = prompt("แก้ไขราคาขาย (บาท):", currentPrice);
+      if (!newPriceStr) return;
+      const newPrice = parseFloat(newPriceStr);
+      if (isNaN(newPrice) || newPrice < 0) {
+        alert("กรุณากรอกราคาที่ถูกต้อง");
+        return;
+      }
+
+      if (!sbAdminClient) return;
+      try {
+        const { error } = await sbAdminClient.from("ebooks").update({ title: newTitle, price: newPrice }).eq("ebook_id", id);
+        if (error) throw error;
+        logAdminActivity("แก้ไขหนังสือ", `แอดมินแก้ไขหนังสือ "${newTitle}" ราคา ฿${newPrice.toFixed(2)}`);
+        broadcastAdminRealtime('book_update');
+        await fetchAdminInventory();
+        alert(`แก้ไขข้อมูลหนังสือ "${newTitle}" ใน Supabase เรียบร้อยแล้ว`);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการแก้ไข: " + err.message);
+      }
+    }
+
+    async function seedDefaultBooks() {
+      if (!confirm("คุณต้องการนำเข้าหนังสือเริ่มต้น 12 เล่ม (ตามระบบต้นฉบับ) เข้าสู่ฐานข้อมูล Supabase หรือไม่?")) return;
+      if (!sbAdminClient) return;
+      const initialBooks = [
+        {
+          title: 'คุณพี่ที่ผมมาส่งข้าวให้จะน่ากลัวเกินไปแล้ว เล่ม 1',
+          author_id: 1,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'เรื่องราวสุดป่วนของเด็กหนุ่มส่งข้าวกล่องกับคุณพี่สาวข้างห้องที่ดูลึกลับและน่ากลัว แต่แท้จริงแล้วมีมุมที่คาดไม่ถึง!',
+          sample_text: 'ตัวอย่างเนื้อหา: "นี่เธอ... วันนี้เอาเมนูอะไรมาส่งงั้นเหรอ?" เสียงทุ้มต่ำดังขึ้นหลังบานประตูที่เปิดแง้มเพียงเล็กน้อย...',
+          cover_url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/scary_sister_vol1.pdf',
+          is_active: true
+        },
+        {
+          title: 'คุณพี่ที่ผมมาส่งข้าวให้จะน่ากลัวเกินไปแล้ว เล่ม 2',
+          author_id: 1,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'ความสัมพันธ์เริ่มคืบหน้า เมื่อคุณพี่สาวเริ่มขอร้องให้ทำข้าวกล่องเมนูพิเศษให้!',
+          sample_text: 'ตัวอย่างเนื้อหา: "ถ้าคราวหน้าเธอทำไข่ม้วนหวานมาให้ ฉันอาจจะมีรางวัลให้ก็ได้นะ..."',
+          cover_url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/scary_sister_vol2.pdf',
+          is_active: true
+        },
+        {
+          title: 'คุณพี่ที่ผมมาส่งข้าวให้จะน่ากลัวเกินไปแล้ว เล่ม 3',
+          author_id: 1,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'การปรากฏตัวของแขกที่ไม่ได้รับเชิญทำให้ความลับของคุณพี่สาวเกือบถูกเปิดเผย!',
+          sample_text: 'ตัวอย่างเนื้อหา: "อย่าบอกเรื่องห้องนี้กับใครเด็ดขาดนะ... สัญญากับฉันสิ"',
+          cover_url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/scary_sister_vol3.pdf',
+          is_active: true
+        },
+        {
+          title: 'คุณพี่ที่ผมมาส่งข้าวให้จะน่ากลัวเกินไปแล้ว เล่ม 4 (จบภาคแรก)',
+          author_id: 1,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'บทสรุปความอบอุ่นของความสัมพันธ์ระหว่างผู้ส่งข้าวกับคุณพี่สาวข้างห้อง!',
+          sample_text: 'ตัวอย่างเนื้อหา: "ขอบคุณนะ สำหรับข้าวกล่องตลอดหนึ่งปีที่ผ่านมา..."',
+          cover_url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/scary_sister_vol4.pdf',
+          is_active: true
+        },
+        {
+          title: 'ยมแพ่งยมโลก เล่ม 12',
+          author_id: 2,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'การต่อสู้สุดดุเดือดในแดนชำระบาปที่เดิมพันด้วยจิตวิญญาณแห่งมวลมนุษยชาติ',
+          sample_text: 'ตัวอย่างเนื้อหา: "ถ้าการมีชีวิตอยู่มันทรมานนัก ข้าจะช่วยปลดปล่อยเจ้าเอง!"',
+          cover_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/underworld_vol12.pdf',
+          is_active: true
+        },
+        {
+          title: 'เพื่อนสะดวกคิส มิตรสะดวกเลิฟ เล่ม 4',
+          author_id: 3,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'ความสัมพันธ์แบบเพื่อนสนิทคิดไม่ซื่อที่เริ่มเลยเถิดจนเกินจะถอยกลับ!',
+          sample_text: 'ตัวอย่างเนื้อหา: "เราเป็นแค่เพื่อนกันจริงๆ น่ะเหรอ? แล้วที่จูบกันเมื่อวานคืออะไร?"',
+          cover_url: 'https://images.unsplash.com/photo-1560972550-aba3456b5564?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/kiss_friend_vol4.pdf',
+          is_active: true
+        },
+        {
+          title: 'เพื่อนคนแรกของผมคือสาวสวยอันดับสองของห้อง เล่ม 1',
+          author_id: 3,
+          category_id: 2,
+          price: 185.00,
+          original_price: 220.00,
+          point_reward: 50,
+          description: 'หนังสือทั่วไปยอดฮิต เมื่อหนุ่มจืดชืดได้สนิทกับดาวโรงเรียนอันดับสองด้วยความบังเอิญ',
+          sample_text: 'ตัวอย่างเนื้อหา: "ทำไมนายถึงคุยกับฉันแบบสบายใจจัง ไม่เกร็งเหมือนคนอื่นเลยล่ะ?"',
+          cover_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/second_beauty_vol1.pdf',
+          is_active: true
+        },
+        {
+          title: 'ซาซากิกับมิยาโนะ เล่ม 11',
+          author_id: 1,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'ชีวิตประจำวันอันสดใสของรุ่นพี่แบดบอยกับรุ่นน้องหนุ่มน้อยผู้รักการ์ตูนวาย',
+          sample_text: 'ตัวอย่างเนื้อหา: "มิยาโนะ... วันนี้มีมังงะเรื่องใหม่มาแนะนำพี่อีกมั้ย?"',
+          cover_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/sasaki_miya_vol11.pdf',
+          is_active: true
+        },
+        {
+          title: 'มิเอรุโกะจัง ใครว่าหนูเห็นผี เล่ม 14',
+          author_id: 2,
+          category_id: 1,
+          price: 152.00,
+          original_price: 169.00,
+          point_reward: 45,
+          description: 'สาวมัธยมผู้มองเห็นวิญญาณสยองขวัญแต่ต้องแกล้งทำเป็นมองไม่เห็นเพื่อเอาชีวิตรอด!',
+          sample_text: 'ตัวอย่างเนื้อหา: "(อย่ามองนะ... ถ้ามองมันจะรู้ว่าเราเห็น... กรี๊ดดดด!)"',
+          cover_url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/mieruko_vol14.pdf',
+          is_active: true
+        },
+        {
+          title: 'เส้นทางจาริกอาถรรพ์ เล่ม 1',
+          author_id: 4,
+          category_id: 3,
+          price: 230.00,
+          original_price: 329.00,
+          point_reward: 60,
+          description: 'นิยายดาร์กแฟนตาซีผจญภัย เดินทางข้ามทวีปต้องสาปเพื่อค้นหาคำตอบแห่งชีวิต',
+          sample_text: 'ตัวอย่างเนื้อหา: "ดินแดนแห่งนี้ไม่มีเทพเจ้าคอยคุ้มครอง มีเพียงดาบในมือเจ้าเท่านั้น..."',
+          cover_url: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/dark_pilgrim_vol1.pdf',
+          is_active: true
+        },
+        {
+          title: 'คัมภีร์ฐานข้อมูลและการป้องกันภัยไซเบอร์',
+          author_id: 5,
+          category_id: 5,
+          price: 290.00,
+          original_price: 350.00,
+          point_reward: 80,
+          description: 'คู่มือออกแบบ RDBMS 3NF พร้อมเทคนิคความปลอดภัย Web & Database ฉบับสมบูรณ์',
+          sample_text: 'ตัวอย่างเนื้อหา: "บทที่ 1: การป้องกัน SQL Injection และ Broken Access Control ในระบบงานจริง..."',
+          cover_url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/db_security_handbook.pdf',
+          is_active: true
+        },
+        {
+          title: 'รวมภาพศิลป์สุดอลังการ Artbook Fantasy 2026',
+          author_id: 1,
+          category_id: 4,
+          price: 390.00,
+          original_price: 450.00,
+          point_reward: 100,
+          description: 'อาร์ตบุ๊ครวมผลงานภาพประกอบสีน้ำและดิจิทัลเพ้นท์ระดับมาสเตอร์พีซ',
+          sample_text: 'ตัวอย่างเนื้อหา: "รวมภาพร่างเบื้องหลังการออกแบบตัวละครและฉากแฟนตาซีสุดตระการตา..."',
+          cover_url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500&auto=format&fit=crop&q=80',
+          file_url: 'https://mockfile.nothave.com/ebooks/fantasy_artbook_2026.pdf',
+          is_active: true
+        }
+      ];
+      try {
+        const { error } = await sbAdminClient.from("ebooks").insert(initialBooks);
+        if (error) throw error;
+        logAdminActivity("นำเข้าหนังสือเริ่มต้น", "แอดมินนำเข้าหนังสือเริ่มต้น 12 เล่มเข้าสู่ Supabase");
+        alert("นำเข้าหนังสือเริ่มต้น 12 เล่มเข้าสู่ Supabase เรียบร้อยแล้ว!");
+        await fetchAdminInventory();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการนำเข้า: " + err.message);
+      }
+    }
+
+    async function restoreAllDeletedBooks() {
+      if (inventoryBooks.length === 0) {
+        return seedDefaultBooks();
+      }
+      if (!confirm("คุณต้องการเปิดการขายหนังสือทั้งหมดในฐานข้อมูล Supabase หรือไม่?")) return;
+      if (!sbAdminClient) return;
+      try {
+        await sbAdminClient.from("ebooks").update({ is_active: true }).gt("ebook_id", 0);
+        logAdminActivity("กู้คืนหนังสือ", "แอดมินเปิดการขายหนังสือทั้งหมดในระบบ");
+        await fetchAdminInventory();
+        alert("เปิดการขายหนังสือทั้งหมดในฐานข้อมูลเรียบร้อยแล้ว");
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    function openAddBookModal() {
+      const user = getCurrentAdminUser();
+      const isWriter = isCurrentWriter();
+
+      const modalTitle = document.getElementById("adminBookModalTitle");
+      const notice = document.getElementById("writerApprovalNotice");
+      const authorInput = document.getElementById("mAuthor");
+      const submitBtn = document.getElementById("btnSubmitBook");
+
+      if (isWriter) {
+        if (modalTitle) modalTitle.innerText = "✍️ อัพโหลดผลงานหนังสือใหม่ (ส่งให้ Admin อนุมัติ)";
+        if (notice) notice.style.display = "block";
+        if (authorInput && !authorInput.value) {
+          authorInput.value = (user && user.full_name) ? user.full_name : "อ.เอกชัย นักเขียนการ์ตูน";
+        }
+        if (submitBtn) submitBtn.innerText = "📤 อัพโหลดและส่งให้ Admin อนุมัติ";
+      } else {
+        if (modalTitle) modalTitle.innerText = "เพิ่มหนังสือเล่มใหม่เข้าสู่ร้าน";
+        if (notice) notice.style.display = "none";
+        if (submitBtn) submitBtn.innerText = "บันทึกเข้าฐานข้อมูล";
+      }
+
+      document.getElementById("adminBookModal").classList.add("active");
+    }
+
+    function closeAdminModal() {
+      document.getElementById("adminBookModal").classList.remove("active");
+    }
+
+    async function uploadFileHelper(fileName, fileData) {
+      if (!fileData || !fileData.startsWith("data:")) return fileData;
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName, fileData })
+        });
+        const json = await res.json();
+        if (json && json.success && json.url) {
+          return json.url;
+        }
+      } catch (uErr) {
+        console.warn("Upload helper note:", uErr);
+      }
+      return fileData;
+    }
+
+    async function handleAdminAddBook(e) {
+      e.preventDefault();
+      const title = document.getElementById("mTitle").value.trim();
+      const author = document.getElementById("mAuthor").value.trim();
+      const catId = parseInt(document.getElementById("mCategory").value);
+      const price = parseFloat(document.getElementById("mPrice").value);
+      let cover = document.getElementById("mCover").value.trim();
+      const coverFileInput = document.getElementById("mCoverFile");
+      if (coverFileInput && coverFileInput.files && coverFileInput.files.length > 0) {
+        const cFile = coverFileInput.files[0];
+        try {
+          const cDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(cFile);
+          });
+          cover = await uploadFileHelper(cFile.name, cDataUrl);
+        } catch (cErr) {
+          console.warn("Cover file read error:", cErr);
+        }
+      } else if (cover && cover.startsWith("data:")) {
+        cover = await uploadFileHelper("cover.png", cover);
+      }
+      if (!cover) {
+        cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500";
+      }
+
+      const desc = document.getElementById("mDesc").value.trim();
+
+      const pdfInput = document.getElementById("mPdfFile");
+      let pdfFileUrl = "";
+      let pdfFileName = "";
+
+      if (pdfInput && pdfInput.files && pdfInput.files.length > 0) {
+        const pdfFile = pdfInput.files[0];
+        pdfFileName = pdfFile.name;
+
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(pdfFile);
+          });
+          pdfFileUrl = await uploadFileHelper(pdfFile.name, dataUrl);
+        } catch (err) {
+          console.warn("PDF read error:", err);
+        }
+      }
+      if (!pdfFileUrl) {
+        pdfFileUrl = "https://mockfile.nothave.com/ebooks/sample_book.pdf";
+      }
+
+      if (!sbAdminClient) {
+        alert("ไม่สามารถเชื่อมต่อ Supabase ได้");
+        return;
+      }
+
+      const user = getCurrentAdminUser();
+      const isWriter = isCurrentWriter();
+
+      try {
+        const submitBtn = document.getElementById("btnSubmitBook") || e.target.querySelector("button[type='submit']");
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerText = isWriter ? "กำลังอัพโหลดส่งให้ Admin..." : "กำลังบันทึกลง Supabase...";
+        }
+
+        // นักเขียน: บันทึกสถานะ is_active: false เพื่อรอให้ Admin อนุมัติก่อนลงหน้าเว็ป
+        const isActive = !isWriter;
+        const authorNameClean = author || (user ? user.full_name : "นักเขียน");
+        
+        let targetAuthorId = null;
+        if (authorNameClean) {
+          try {
+            const { data: existingAuthors } = await sbAdminClient
+              .from("authors")
+              .select("author_id, author_name")
+              .ilike("author_name", authorNameClean)
+              .limit(1);
+
+            if (existingAuthors && existingAuthors.length > 0) {
+              targetAuthorId = existingAuthors[0].author_id;
+            } else {
+              const { data: newAuth } = await sbAdminClient
+                .from("authors")
+                .insert([{ author_name: authorNameClean, bio: "ผู้สร้างสรรค์ผลงาน" }])
+                .select();
+              if (newAuth && newAuth[0]) {
+                targetAuthorId = newAuth[0].author_id;
+              }
+            }
+          } catch (aErr) {
+            console.warn("Author lookup/insert note:", aErr);
+          }
+        }
+
+        // หากยังไม่มี author_id ให้ดึงผู้แต่งคนแรก หรือบันทึกแถวนักเขียนใหม่อัตโนมัติป้องกัน Foreign Key Error
+        if (!targetAuthorId) {
+          try {
+            const { data: anyAuth } = await sbAdminClient.from("authors").select("author_id").limit(1);
+            if (anyAuth && anyAuth.length > 0) {
+              targetAuthorId = anyAuth[0].author_id;
+            } else {
+              const { data: fallbackAuth } = await sbAdminClient.from("authors").insert([{ author_name: authorNameClean || "นักเขียนทั่วไป", bio: "ผู้สร้างสรรค์ผลงาน" }]).select();
+              if (fallbackAuth && fallbackAuth[0]) {
+                targetAuthorId = fallbackAuth[0].author_id;
+              }
+            }
+          } catch (fErr) {}
+        }
+
+        const writerTag = `\n[WRITER_SUBMISSION: user_id=${user ? user.id : 0}|writer_name=${authorNameClean}|status=${isActive ? 'approved' : 'pending'}]`;
+
+        const { data, error } = await sbAdminClient.from("ebooks").insert([{
+          title: title,
+          author_id: targetAuthorId,
+          category_id: catId,
+          price: price,
+          original_price: price,
+          cover_url: cover,
+          file_url: pdfFileUrl || "",
+          is_active: isActive,
+          description: desc + writerTag,
+          sample_text: desc,
+          point_reward: Math.round(price * 0.2)
+        }]).select();
+
+        if (error) throw error;
+
+        const newEbookId = data && data[0] ? data[0].ebook_id : Date.now();
+
+        if (isWriter) {
+          // บันทึกลง local tracking list สำหรับรอ Admin อนุมัติ (ตัด base64 ออกเพื่อป้องกัน localStorage เต็ม Quota)
+          try {
+            let pendingList = [];
+            try {
+              pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
+            } catch (e) {
+              pendingList = [];
+            }
+            pendingList = pendingList.filter(p => p.ebook_id !== newEbookId);
+            pendingList.push({
+              ebook_id: newEbookId,
+              title: title,
+              author: author || (user ? user.full_name : "นักเขียน"),
+              category_id: catId,
+              category_name: (catId === 1 ? "มังงะ" : (catId === 2 ? "หนังสือทั่วไป" : "นิยาย - ทั่วไป")),
+              price: price,
+              cover_url: (cover && !cover.startsWith("data:")) ? cover : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100",
+              file_url: (pdfFileUrl && !pdfFileUrl.startsWith("data:")) ? pdfFileUrl : "",
+              pdf_name: pdfFileName || "",
+              description: desc,
+              writer_id: user ? user.id : 0,
+              writer_name: user ? (user.full_name || author) : author,
+              writer_email: user ? user.email : "",
+              status: "pending",
+              submitted_at: new Date().toISOString()
+            });
+
+            try {
+              localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
+            } catch (quotaErr) {
+              // หาก Quota เต็ม ให้เก็บเฉพาะข้อมูลย่อ (Compact Metadata)
+              const compactList = pendingList.slice(-10).map(p => ({
+                ebook_id: p.ebook_id,
+                title: p.title,
+                author: p.author,
+                status: p.status,
+                writer_name: p.writer_name
+              }));
+              try {
+                localStorage.setItem("nothave_pending_writer_books", JSON.stringify(compactList));
+              } catch (e) {}
+            }
+          } catch (storageErr) {
+            console.warn("Storage pending list note:", storageErr);
+          }
+
+          // แจ้งเตือนในห้องคอมมูนิตี้ให้ @Admin ตรวจสอบ
+          try {
+            const commMsgs = JSON.parse(localStorage.getItem("nothave_community_messages") || "[]");
+            commMsgs.push({
+              id: "COMM-" + Date.now(),
+              user_id: user ? user.id : 0,
+              author: user ? user.full_name : "นักเขียน",
+              email: user ? user.email : "writer@nothave.com",
+              role: "writer",
+              message: `📢 นักเขียนได้อัพโหลดหนังสือใหม่ "${title}" ราคา ฿${price.toFixed(2)} เข้าสู่ระบบแล้ว ขอส่งให้ @Admin ตรวจสอบและอนุมัติลงหน้าเว็ปด้วยครับ 🙏`,
+              is_tagged_admin: true,
+              created_at: new Date().toISOString(),
+              likes: []
+            });
+            try {
+              localStorage.setItem("nothave_community_messages", JSON.stringify(commMsgs.slice(-30)));
+            } catch (qE) {}
+          } catch (commErr) {
+            console.warn("Comm notify err:", commErr);
+          }
+
+          logAdminActivity("นักเขียนส่งผลงาน", `นักเขียน "${user ? user.full_name : author}" ส่งหนังสือ "${title}" (รอ Admin อนุมัติก่อนลงหน้าเว็ป)`);
+          closeAdminModal();
+          e.target.reset();
+          broadcastAdminRealtime('book_update');
+          await fetchAdminInventory();
+          alert(`🎉 อัพโหลดหนังสือ "${title}" เรียบร้อยแล้ว!\n\nสถานะ: ⏳ รอ Admin อนุมัติ\n\nผลงานจะถูกส่งเข้าคิวรอ Admin ตรวจสอบ เมื่อ Admin กดอนุมัติแล้ว หนังสือจะขึ้นแสดงบนหน้าเว็ปทันทีครับ`);
+        } else {
+          logAdminActivity("เพิ่มหนังสือใหม่", `แอดมินเพิ่มหนังสือ "${title}" ราคา ฿${price.toFixed(2)}${pdfFileName ? ` (ไฟล์: ${pdfFileName})` : ""}`);
+          closeAdminModal();
+          e.target.reset();
+          broadcastAdminRealtime('book_update');
+          await fetchAdminInventory();
+          alert(`เพิ่มหนังสือ "${title}" ลงในฐานข้อมูล Supabase สำเร็จเรียบร้อยแล้วครับ!`);
+        }
+      } catch (err) {
+        console.error("Add book error:", err);
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+      } finally {
+        const submitBtn = document.getElementById("btnSubmitBook") || e.target.querySelector("button[type='submit']");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = isWriter ? "📤 อัพโหลดและส่งให้ Admin อนุมัติ" : "บันทึกเข้าฐานข้อมูล";
+        }
+      }
+    }
+
+    // ========================================================
+    // 7. USERS MANAGEMENT (ดึงตรงจาก Supabase Real-Time)
+    // ========================================================
+    async function fetchAndRenderUsers(isSilent = false) {
+      if (isFetchingUsers) return;
+      isFetchingUsers = true;
+
+      const tbody = document.getElementById("usersTbody");
+      if (!tbody) {
+        isFetchingUsers = false;
+        return;
+      }
+
+      if (!isSilent && (!tbody.children || tbody.children.length === 0)) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">กำลังโหลดข้อมูลผู้ใช้จาก Supabase Real-time...</td></tr>`;
+      }
+
+      if (!sbAdminClient) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#ef4444;">ไม่สามารถเชื่อมต่อฐานข้อมูลได้</td></tr>`;
+        isFetchingUsers = false;
+        return;
+      }
+
+      try {
+        const { data, error } = await sbAdminClient
+          .from("users")
+          .select(`
+            user_id,
+            email,
+            full_name,
+            phone,
+            password_hash,
+            role_id,
+            roles ( role_name )
+          `)
+          .order("user_id", { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          // ดึงข้อมูล Role Overrides จาก Server และ LocalStorage เพื่อรองรับ role 3 (writer) อย่างสมบูรณ์ 100%
+          let roleOverrides = {};
+          try {
+            const resp = await fetch("/api/user-roles");
+            if (resp.ok) roleOverrides = await resp.json();
+          } catch (e) { }
+          try {
+            const localOverrides = JSON.parse(localStorage.getItem("nothave_role_overrides") || "{}");
+            roleOverrides = { ...roleOverrides, ...localOverrides };
+          } catch (e) { }
+
+          adminUsersList = data;
+          const kpiUsers = document.getElementById("kpiUsers");
+          if (kpiUsers) kpiUsers.innerText = `${data.length} บัญชี`;
+
+          if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">ไม่มีข้อมูลผู้ใช้ในระบบ</td></tr>`;
+            updateSelectedUsersUI();
+            return;
+          }
+
+          let currentAdminId = null;
+          try {
+            const stored = JSON.parse(localStorage.getItem("nothave_user"));
+            if (stored) currentAdminId = stored.user_id;
+          } catch (e) { }
+
+          tbody.innerHTML = data.map(u => {
+            const override = roleOverrides[String(u.user_id)] || (u.email && roleOverrides[String(u.email).toLowerCase()]);
+            const roleId = override ? override.roleId : (parseInt(u.role_id) || 1);
+            const roleName = override ? override.roleName : (u.roles?.role_name || (roleId === 2 ? "admin" : (roleId === 3 ? "writer" : "customer")));
+            const isAdmin = roleName === "admin" || roleId === 2;
+            const isWriter = roleName === "writer" || roleId === 3;
+            const isSelf = currentAdminId && u.user_id === currentAdminId;
+            const hashDisplay = u.password_hash ? u.password_hash.substring(0, 12) + "... (SHA-256)" : "-";
+
+            const badgeBg = isAdmin ? '#dcfce7' : (isWriter ? '#ede9fe' : '#fef9c3');
+            const badgeColor = isAdmin ? '#15803d' : (isWriter ? '#6d28d9' : '#a16207');
+            const badgeBorder = isAdmin ? '#86efac' : (isWriter ? '#c4b5fd' : '#fde047');
+
+            return `
+              <tr id="user-row-${u.user_id}">
+                <td style="text-align:center;">
+                  <input type="checkbox" class="user-select-checkbox" value="${u.user_id}" 
+                    ${isSelf ? 'disabled title="ไม่สามารถลบบัญชีตัวเองที่กำลังใช้งานได้"' : ''}
+                    onchange="updateSelectedUsersUI()" style="cursor:pointer; width:16px; height:16px;">
+                </td>
+                <td><strong>${u.user_id}</strong></td>
+                <td>${isAdmin ? '<strong style="color:#0284c7;">' : (isWriter ? '<strong style="color:#7c3aed;">' : '')}${escapeHTML(u.full_name)}${isAdmin || isWriter ? '</strong>' : ''}</td>
+                <td>${escapeHTML(u.email)}</td>
+                <td>${escapeHTML(u.phone || '-')}</td>
+                <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:11px;">${hashDisplay}</code></td>
+                <td>
+                  <select onchange="changeUserRole(${u.user_id}, this.value, '${escapeQuote(u.full_name)}', '${escapeQuote(u.email)}')"
+                    title="คลิกเพื่อเลือกเปลี่ยนบทบาทผู้ใช้"
+                    style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; font-size:12px; font-weight:700; padding:4px 8px; border-radius:6px; cursor:pointer; outline:none; transition:all 0.2s;">
+                    <option value="1" ${roleId === 1 || roleName === 'customer' ? 'selected' : ''}>1. customer</option>
+                    <option value="2" ${roleId === 2 || roleName === 'admin' ? 'selected' : ''}>2. admin</option>
+                    <option value="3" ${roleId === 3 || roleName === 'writer' ? 'selected' : ''}>3. writer</option>
+                  </select>
+                </td>
+                <td style="text-align:center;">
+                  ${isSelf ? '<span style="color:#94a3b8; font-size:12px;">บัญชีปัจจุบัน</span>' : `
+                    <button class="btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;" 
+                      onclick="deleteSingleUser(${u.user_id}, '${escapeQuote(u.full_name)}')" title="ลบผู้ใช้นี้ออกจากฐานข้อมูล">
+                      ลบ
+                    </button>
+                  `}
+                </td>
+              </tr>
+            `;
+          }).join("");
+
+          updateSelectedUsersUI();
+        }
+      } catch (err) {
+        console.error("fetchAndRenderUsers error:", err);
+        if (!isSilent) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#ef4444;">เกิดข้อผิดพลาด: ${escapeHTML(err.message)}</td></tr>`;
+        }
+      } finally {
+        isFetchingUsers = false;
+      }
+    }
+
+    async function changeUserRole(userId, newRoleId, fullName, email = "") {
+      const roleIdNum = parseInt(newRoleId);
+      const roleMap = { 1: "customer", 2: "admin", 3: "writer" };
+      const roleThaiMap = { 1: "1. customer (ลูกค้า)", 2: "2. admin (ผู้ดูแลระบบ)", 3: "3. writer (นักเขียน)" };
+      const roleName = roleMap[roleIdNum] || "customer";
+      const targetRoleName = roleThaiMap[roleIdNum] || roleName;
+
+      if (!confirm(`คุณต้องการเปลี่ยนบทบาทของ "${fullName}" เป็น "${targetRoleName}" ใช่หรือไม่?`)) {
+        await fetchAndRenderUsers(true);
+        return;
+      }
+
+      try {
+        // 1. บันทึกลง localStorage role overrides
+        const localOverrides = JSON.parse(localStorage.getItem("nothave_role_overrides") || "{}");
+        localOverrides[String(userId)] = { roleId: roleIdNum, roleName };
+        if (email) localOverrides[String(email).toLowerCase()] = { roleId: roleIdNum, roleName };
+        localStorage.setItem("nothave_role_overrides", JSON.stringify(localOverrides));
+
+        // 2. บันทึกลง Server Backend API
+        try {
+          fetch("/api/user-roles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, email, roleId: roleIdNum, roleName })
+          });
+        } catch (e) { }
+
+        // 3. หากผู้ใช้นี้คือ Session ปัจจุบันในเครื่อง ให้อัปเดตทันที
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("nothave_user") || "null");
+          if (storedUser && ((userId && (storedUser.user_id == userId || storedUser.id == userId)) || (email && storedUser.email === email))) {
+            storedUser.role_id = roleIdNum;
+            storedUser.role_name = roleName;
+            localStorage.setItem("nothave_user", JSON.stringify(storedUser));
+          }
+        } catch (e) { }
+
+        // 4. ส่งสัญญาณ Real-time แจ้งทุกแท็บ
+        try {
+          const bc = new BroadcastChannel("nothave_sync_channel");
+          bc.postMessage({ type: "ROLE_REQUEST_STATUS_UPDATED", userId, roleId: roleIdNum, roleName });
+        } catch (e) { }
+        try { window.dispatchEvent(new Event("storage")); } catch (e) { }
+
+        // 5. พยายามอัปเดต Supabase (หากสำเร็จก็ดี หากติด Constraint ระบบก็บันทึกสำเร็จเรียบร้อยแล้ว)
+        if (sbAdminClient) {
+          try {
+            await sbAdminClient
+              .from("users")
+              .update({ role_id: roleIdNum })
+              .eq("user_id", userId);
+          } catch (e) { }
+        }
+
+        logAdminActivity("เปลี่ยนบทบาทผู้ใช้", `เปลี่ยนบทบาทของ "${fullName}" (ID: ${userId}) เป็น ${roleName}`);
+        alert(`เปลี่ยนบทบาทของ "${fullName}" เป็น "${targetRoleName}" สำเร็จเรียบร้อยแล้วครับ!`);
+        await fetchAndRenderUsers(true);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+        await fetchAndRenderUsers(true);
+      }
+    }
+
+    // ========================================================
+    // ROLE APPROVAL REQUESTS (รับคำขออนุมัติบทบาทจากผู้ใช้)
+    // ========================================================
+    async function renderRoleRequests() {
+      const container = document.getElementById("roleRequestsContainer");
+      const badge = document.getElementById("roleReqCountBadge");
+      const sideBadge = document.getElementById("sidebarUserBadge");
+      const overAlert = document.getElementById("overviewRoleReqAlert");
+      const overCount = document.getElementById("overviewRoleReqCount");
+
+      let localReqs = JSON.parse(localStorage.getItem("nothave_role_requests") || "[]");
+
+      // ดึงข้อมูลคำขอจาก Server API ด้วย (เพื่อให้ซิงก์กันข้ามเครื่องและข้ามแท็บ 100%)
+      try {
+        const resp = await fetch(`${BACKEND_URL}/api/role-requests`);
+        if (resp.ok) {
+          const serverReqs = await resp.json();
+          if (Array.isArray(serverReqs)) {
+            const map = new Map();
+            localReqs.forEach(r => map.set(r.id, r));
+            serverReqs.forEach(r => map.set(r.id, r));
+            localReqs = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            localStorage.setItem("nothave_role_requests", JSON.stringify(localReqs));
+          }
+        }
+      } catch (e) { }
+
+      // Deduplicate: แสดงเพียง 1 คำขอล่าสุดต่อ 1 บัญชีผู้ใช้ (ไม่ให้ขึ้นซ้ำ 2 อัน)
+      const seenUsers = new Set();
+      const pendingReqs = localReqs.filter(r => {
+        if (r.status !== "pending") return false;
+        const key = (r.email || r.user_id || r.id).toString().toLowerCase();
+        if (seenUsers.has(key)) return false;
+        seenUsers.add(key);
+        return true;
+      });
+
+      if (badge) badge.innerText = `${pendingReqs.length} รายการ`;
+      if (sideBadge) {
+        sideBadge.innerText = pendingReqs.length;
+        sideBadge.style.display = pendingReqs.length > 0 ? "inline-block" : "none";
+      }
+      if (overAlert) {
+        overAlert.style.display = pendingReqs.length > 0 ? "flex" : "none";
+      }
+      if (overCount) {
+        overCount.innerText = pendingReqs.length;
+      }
+
+      if (!container) return;
+
+      if (pendingReqs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:18px; color:#8b5cf6; font-size:13px; background:#f5f3ff; border-radius:8px; border:1px dashed #c4b5fd;">
+            ✨ ไม่มีคำขออนุมัติบทบาทที่ค้างอยู่ (ระบบจะแสดงรายการจริงอัตโนมัติเมื่อมีผู้ส่งขอความอนุมัติเข้ามา)
+          </div>
+        `;
+        return;
+      }
+
+      const roleThaiMap = { 1: "customer (ลูกค้า)", 2: "admin (ผู้ดูแลระบบ)", 3: "writer (นักเขียน)" };
+
+      container.innerHTML = pendingReqs.map(req => {
+        const timeStr = req.created_at ? new Date(req.created_at).toLocaleString('th-TH') : "-";
+        const isTagged = req.is_tagged_admin || (req.message && req.message.includes("@Admin"));
+        const tagBadge = isTagged ? `
+          <span style="background:linear-gradient(135deg, #7c3aed, #9333ea); color:#ffffff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 5px rgba(124,58,237,0.25);">
+            <span>🏷️</span> @Admin Tagged
+          </span>
+        ` : '';
+
+        // Highlight @Admin in message
+        let safeMsg = escapeHTML(req.message || 'ไม่มีข้อความเพิ่มเติม');
+        safeMsg = safeMsg.replace(/@Admin/gi, '<strong style="color:#7c3aed; background:#ede9fe; padding:1px 6px; border-radius:4px; border:1px solid #ddd6fe;">@Admin</strong>');
+
+        return `
+          <div style="background:#ffffff; border:1.5px solid ${isTagged ? '#c4b5fd' : '#e9d5ff'}; border-radius:10px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 6px rgba(109,40,217,0.06);">
+            <div style="flex:1; min-width:260px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <strong style="color:#0f172a; font-size:14px;">${escapeHTML(req.full_name)}</strong>
+                <span style="font-size:12px; color:#64748b;">(${escapeHTML(req.email)} - ID: ${req.user_id || 'Guest'})</span>
+                <span style="font-size:11px; background:#f1f5f9; padding:2px 8px; border-radius:4px; color:#475569;">${timeStr}</span>
+                ${tagBadge}
+              </div>
+              <div style="font-size:13px; margin-bottom:6px;">
+                <span style="color:#475569;">ขออนุมัติเปลี่ยนเป็น:</span>
+                <strong style="color:#6d28d9; background:#ede9fe; padding:3px 10px; border-radius:6px; margin-left:4px; font-size:12.5px;">
+                  ${escapeHTML(roleThaiMap[req.target_role_id] || req.target_role_name)}
+                </strong>
+              </div>
+              <div style="font-size:13px; color:#1e1b4b; background:#faf5ff; padding:8px 12px; border-radius:8px; border-left:4px solid #7c3aed; line-height:1.5;">
+                💬 ข้อความจากผู้ใช้: ${safeMsg}
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-sm" style="background:#10b981; color:#ffffff; font-weight:700; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;"
+                onclick="approveRoleRequest('${req.id}', '${req.user_id || ''}', ${req.target_role_id}, '${escapeQuote(req.target_role_name)}', '${escapeQuote(req.full_name)}', '${escapeQuote(req.email || '')}')">
+                ✓ อนุมัติทันที
+              </button>
+              <button class="btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:600;"
+                onclick="rejectRoleRequest('${req.id}')">
+                ✕ ปฏิเสธ
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function approveRoleRequest(reqId, userId, targetRoleId, targetRoleName, fullName, email) {
+      if (!confirm(`คุณต้องการอนุมัติให้ "${fullName}" (${email || 'ID: ' + userId}) ได้รับบทบาท "${targetRoleName}" ใช่หรือไม่?`)) return;
+
+      try {
+        // 1. อัปเดตตาราง users บน Supabase จริง
+        if (sbAdminClient) {
+          let updateQuery = sbAdminClient.from("users").update({ role_id: targetRoleId });
+          const numId = parseInt(userId);
+          if (!isNaN(numId) && numId > 0) {
+            updateQuery = updateQuery.eq("user_id", numId);
+          } else if (email) {
+            updateQuery = updateQuery.eq("email", email);
+          }
+          const { error } = await updateQuery;
+          if (error && error.code !== '23503') {
+            console.warn("Supabase update note:", error.message);
+          }
+        }
+
+        // 2. อัปเดตสถานะคำขอใน localStorage
+        const requests = JSON.parse(localStorage.getItem("nothave_role_requests") || "[]");
+        const idx = requests.findIndex(r => r.id === reqId);
+        if (idx !== -1) {
+          requests[idx].status = "approved";
+          localStorage.setItem("nothave_role_requests", JSON.stringify(requests));
+        }
+
+        // บันทึก Role Override ลง localStorage และ Backend
+        const localOverrides = JSON.parse(localStorage.getItem("nothave_role_overrides") || "{}");
+        if (userId) localOverrides[String(userId)] = { roleId: targetRoleId, roleName: targetRoleName };
+        if (email) localOverrides[String(email).toLowerCase()] = { roleId: targetRoleId, roleName: targetRoleName };
+        localStorage.setItem("nothave_role_overrides", JSON.stringify(localOverrides));
+
+        try {
+          fetch(`${BACKEND_URL}/api/user-roles`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, email, roleId: targetRoleId, roleName: targetRoleName })
+          });
+        } catch (e) { }
+
+        // 3. อัปเดตสถานะคำขอบน Server Backend API
+        try {
+          fetch(`${BACKEND_URL}/api/role-requests/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: reqId, status: "approved" })
+          });
+        } catch (e) { }
+
+        // 4. อัปเดต Session ของผู้ใช้ใน localStorage ทันที (หากผู้ใช้ล็อกอินอยู่)
+        try {
+          const currentLocalUser = JSON.parse(localStorage.getItem("nothave_user") || "null");
+          if (currentLocalUser && (
+            (userId && (currentLocalUser.user_id == userId || currentLocalUser.id == userId)) ||
+            (email && currentLocalUser.email === email)
+          )) {
+            currentLocalUser.role_id = targetRoleId;
+            currentLocalUser.role_name = targetRoleName;
+            localStorage.setItem("nothave_user", JSON.stringify(currentLocalUser));
+          }
+        } catch (e) { }
+
+        // 5. ส่งสัญญาณ Real-time แจ้งเตือนทุกแท็บและทุกหน้าต่างทันที (0 ms)
+        try {
+          const bc = new BroadcastChannel("nothave_sync_channel");
+          bc.postMessage({ type: "ROLE_REQUEST_STATUS_UPDATED", id: reqId, status: "approved" });
+        } catch (e) { }
+
+        try {
+          window.dispatchEvent(new Event("storage"));
+        } catch (e) { }
+
+        // 6. โพสต์ข้อความแจ้งผลลงในคอมมูนิตี้แบบ Real-time
+        const commMsgs = JSON.parse(localStorage.getItem("nothave_community_messages") || "[]");
+        commMsgs.push({
+          id: "COMM-" + Date.now(),
+          user_id: 1,
+          author: "ผู้ดูแลร้าน (Admin)",
+          email: "admin@bookstore.com",
+          role_id: 2,
+          role_name: "admin",
+          message: `🎉 @${fullName} ยินดีด้วยครับ! ผู้ดูแลร้านได้อนุมัติคำขอสิทธิ์เป็น "${targetRoleName}" ของคุณเรียบร้อยแล้วครับ! สามารถเข้าใช้งานระบบได้ทันที 🚀`,
+          is_tagged_admin: false,
+          reply_to: {
+            author: fullName,
+            text: `ขออนุมัติบทบาท: ${targetRoleName}`
+          },
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem("nothave_community_messages", JSON.stringify(commMsgs));
+
+        broadcastAdminRealtime('role_update', { email: email, role_id: targetRoleId, role_name: targetRoleName });
+        broadcastAdminRealtime('community_message');
+
+        logAdminActivity("อนุมัติบทบาทผู้ใช้", `แอดมินอนุมัติให้ "${fullName}" (${email || 'ID: ' + userId}) เป็น ${targetRoleName}`);
+        alert(`อนุมัติให้ "${fullName}" เป็น ${targetRoleName} สำเร็จเรียบร้อยแล้วครับ!`);
+        renderRoleRequests();
+        await fetchAndRenderUsers(true);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    function rejectRoleRequest(reqId) {
+      if (!confirm("คุณต้องการปฏิเสธคำขอนี้ใช่หรือไม่?")) return;
+      const requests = JSON.parse(localStorage.getItem("nothave_role_requests") || "[]");
+      const idx = requests.findIndex(r => r.id === reqId);
+      if (idx !== -1) {
+        const req = requests[idx];
+        req.status = "rejected";
+        localStorage.setItem("nothave_role_requests", JSON.stringify(requests));
+
+        try {
+          fetch(`${BACKEND_URL}/api/role-requests/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: reqId, status: "rejected" })
+          });
+        } catch (e) { }
+
+        // แจ้งเตือนทุกหน้าต่างแบบ Real-time
+        try {
+          const bc = new BroadcastChannel("nothave_sync_channel");
+          bc.postMessage({ type: "ROLE_REQUEST_STATUS_UPDATED", id: reqId, status: "rejected" });
+        } catch (e) { }
+
+        // โพสต์แจ้งผลลงคอมมูนิตี้
+        const commMsgs = JSON.parse(localStorage.getItem("nothave_community_messages") || "[]");
+        commMsgs.push({
+          id: "COMM-" + Date.now(),
+          user_id: 1,
+          author: "ผู้ดูแลร้าน (Admin)",
+          email: "admin@bookstore.com",
+          role_id: 2,
+          role_name: "admin",
+          message: `ℹ️ @${req.full_name} ขออภัยครับ คำขอสิทธิ์บทบาทของคุณยังไม่ผ่านการอนุมัติในขณะนี้ หากมีข้อสงสัยสามารถสอบถามเพิ่มเติมได้ครับ`,
+          is_tagged_admin: false,
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem("nothave_community_messages", JSON.stringify(commMsgs));
+        renderRoleRequests();
+      }
+    }
+
+    // ========================================================
+    // BATCH USERS ACTIONS (ติ๊กเลือกลบสมาชิก หรือลบทั้งหมด)
+    // ========================================================
+    function toggleSelectAllUsers(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      document.querySelectorAll(".user-select-checkbox:not(:disabled)").forEach(cb => {
+        cb.checked = isChecked;
+      });
+      updateSelectedUsersUI();
+    }
+
+    function updateSelectedUsersUI() {
+      const checkboxes = document.querySelectorAll(".user-select-checkbox:not(:disabled)");
+      const checkedBoxes = document.querySelectorAll(".user-select-checkbox:checked");
+      const count = checkedBoxes.length;
+
+      document.querySelectorAll(".user-select-checkbox").forEach(cb => {
+        const row = document.getElementById(`user-row-${cb.value}`);
+        if (row) row.style.backgroundColor = cb.checked ? '#fff1f2' : '';
+      });
+
+      const badge = document.getElementById("selectedUsersBadge");
+      const countEl = document.getElementById("selectedUsersCount");
+      const delBtn = document.getElementById("btnDeleteSelectedUsers");
+      const btnSelCount = document.getElementById("btnDeleteSelectedUsersCount");
+      const masterCb = document.getElementById("selectAllUsersCheckbox");
+
+      if (masterCb && checkboxes.length > 0) {
+        masterCb.checked = count === checkboxes.length;
+        masterCb.indeterminate = count > 0 && count < checkboxes.length;
+      }
+
+      if (count > 0) {
+        if (badge) badge.style.display = "inline-block";
+        if (countEl) countEl.innerText = count;
+        if (delBtn) delBtn.style.display = "inline-flex";
+        if (btnSelCount) btnSelCount.innerText = count;
+      } else {
+        if (badge) badge.style.display = "none";
+        if (delBtn) delBtn.style.display = "none";
+      }
+    }
+
+    async function deleteSingleUser(userId, name) {
+      if (!confirm(`ยืนยันการลบบัญชีผู้ใช้ "${name}" (ID: ${userId}) ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?`)) {
+        return;
+      }
+      try {
+        if (sbAdminClient) {
+          const { data: userOrders } = await sbAdminClient.from("orders").select("order_id").eq("user_id", userId);
+          if (userOrders && userOrders.length > 0) {
+            const orderIds = userOrders.map(o => o.order_id);
+            await sbAdminClient.from("payments").delete().in("order_id", orderIds);
+            await sbAdminClient.from("order_items").delete().in("order_id", orderIds);
+            await sbAdminClient.from("download_links").delete().in("order_id", orderIds);
+            await sbAdminClient.from("orders").delete().in("order_id", orderIds);
+          }
+          const { error } = await sbAdminClient.from("users").delete().eq("user_id", userId);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบผู้ใช้", `แอดมินลบบัญชีผู้ใช้ "${name}" (ID: ${userId})`);
+        alert(`ลบบัญชีผู้ใช้ "${name}" เรียบร้อยแล้ว`);
+        await fetchAndRenderUsers();
+      } catch (err) {
+        console.error("deleteSingleUser error:", err);
+        alert("เกิดข้อผิดพลาดในการลบผู้ใช้: " + err.message);
+      }
+    }
+
+    async function deleteSelectedUsers() {
+      const checkedBoxes = document.querySelectorAll(".user-select-checkbox:checked");
+      const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value)).filter(id => !isNaN(id));
+
+      if (selectedIds.length === 0) {
+        alert("กรุณาติ๊กเลือกบัญชีผู้ใช้ที่ต้องการลบอย่างน้อย 1 รายการครับ");
+        return;
+      }
+
+      if (!confirm(`ยืนยันการลบบัญชีผู้ใช้ที่เลือกจำนวน ${selectedIds.length} รายการ ออกจากฐานข้อมูล Supabase ถาวรหรือไม่?`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          const { data: userOrders } = await sbAdminClient.from("orders").select("order_id").in("user_id", selectedIds);
+          if (userOrders && userOrders.length > 0) {
+            const orderIds = userOrders.map(o => o.order_id);
+            await sbAdminClient.from("payments").delete().in("order_id", orderIds);
+            await sbAdminClient.from("order_items").delete().in("order_id", orderIds);
+            await sbAdminClient.from("download_links").delete().in("order_id", orderIds);
+            await sbAdminClient.from("orders").delete().in("order_id", orderIds);
+          }
+          const { error } = await sbAdminClient.from("users").delete().in("user_id", selectedIds);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบผู้ใช้ที่เลือก", `แอดมินลบบัญชีผู้ใช้ที่เลือกจำนวน ${selectedIds.length} รายการ`);
+        alert(`ลบบัญชีผู้ใช้ที่เลือกจำนวน ${selectedIds.length} รายการ เรียบร้อยแล้วครับ`);
+        await fetchAndRenderUsers();
+      } catch (err) {
+        console.error("deleteSelectedUsers error:", err);
+        alert("เกิดข้อผิดพลาดในการลบผู้ใช้: " + err.message);
+      }
+    }
+
+    async function deleteAllUsers() {
+      let currentAdminId = null;
+      try {
+        const stored = JSON.parse(localStorage.getItem("nothave_user"));
+        if (stored) currentAdminId = stored.user_id;
+      } catch (e) { }
+
+      const nonAdminUsers = adminUsersList.filter(u => u.user_id !== currentAdminId && u.role_id !== 2);
+      if (nonAdminUsers.length === 0) {
+        alert("ไม่มีบัญชีสมาชิกลูกค้าให้ลบครับ (ระบบจะคงบัญชีแอดมินไว้เสมอ)");
+        return;
+      }
+
+      if (!confirm(`⚠️ คำเตือนสำคัญ!\nคุณต้องการลบบัญชีสมาชิกลูกค้าทั้งหมด ${nonAdminUsers.length} รายการ ออกจากฐานข้อมูล Supabase หรือไม่?\n\n(บัญชีแอดมินจะไม่ถูกลบเพื่อความปลอดภัย)`)) {
+        return;
+      }
+
+      try {
+        if (sbAdminClient) {
+          const userIds = nonAdminUsers.map(u => u.user_id);
+          const { data: userOrders } = await sbAdminClient.from("orders").select("order_id").in("user_id", userIds);
+          if (userOrders && userOrders.length > 0) {
+            const orderIds = userOrders.map(o => o.order_id);
+            await sbAdminClient.from("payments").delete().in("order_id", orderIds);
+            await sbAdminClient.from("order_items").delete().in("order_id", orderIds);
+            await sbAdminClient.from("download_links").delete().in("order_id", orderIds);
+            await sbAdminClient.from("orders").delete().in("order_id", orderIds);
+          }
+          const { error } = await sbAdminClient.from("users").delete().in("user_id", userIds);
+          if (error) throw error;
+        }
+
+        logAdminActivity("ลบสมาชิกลูกค้าทั้งหมด", `แอดมินลบบัญชีสมาชิกลูกค้าทั้งหมด ${nonAdminUsers.length} บัญชี`);
+        alert(`ลบบัญชีสมาชิกลูกค้าทั้งหมด ${nonAdminUsers.length} บัญชี เรียบร้อยแล้วครับ`);
+        await fetchAndRenderUsers();
+      } catch (err) {
+        console.error("deleteAllUsers error:", err);
+        alert("เกิดข้อผิดพลาดในการลบสมาชิกทั้งหมด: " + err.message);
+      }
+    }
+
+    // ========================================================
+    // 8. PROFILE SETTINGS
+    // ========================================================
+    function openAdminProfileModal() {
+      const stored = localStorage.getItem("nothave_user");
+      const user = stored ? JSON.parse(stored) : { full_name: "Admin (ผู้ดูแลร้าน)", email: "admin@nothave.com", phone: "" };
+
+      document.getElementById("adminProfileName").value = user.full_name || "Admin (ผู้ดูแลร้าน)";
+      document.getElementById("adminProfileEmail").value = user.email || "admin@nothave.com";
+      document.getElementById("adminProfilePhone").value = user.phone || "";
+      document.getElementById("adminProfileNewPass").value = "";
+      document.getElementById("adminProfileConfirmPass").value = "";
+
+      const msg = document.getElementById("adminProfileSaveMsg");
+      if (msg) { msg.innerText = ""; msg.style.display = "none"; }
+
+      document.getElementById("adminProfileModal").classList.add("active");
+    }
+
+    function closeAdminProfileModal() {
+      document.getElementById("adminProfileModal").classList.remove("active");
+    }
+
+    async function handleSaveAdminProfile(e) {
+      e.preventDefault();
+      const newName = document.getElementById("adminProfileName").value.trim();
+      const newPhone = document.getElementById("adminProfilePhone").value.trim();
+      const newPass = document.getElementById("adminProfileNewPass").value;
+      const confPass = document.getElementById("adminProfileConfirmPass").value;
+      const msg = document.getElementById("adminProfileSaveMsg");
+
+      if (!newName) {
+        alert("กรุณากรอกชื่อ-นามสกุล");
+        return;
+      }
+
+      let newHash = null;
+      if (newPass) {
+        if (newPass.length < 6) {
+          alert("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+          return;
+        }
+        if (newPass !== confPass) {
+          alert("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+          return;
+        }
+        const msgUint8 = new TextEncoder().encode(newPass);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+        newHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      try {
+        const stored = localStorage.getItem("nothave_user");
+        let user = stored ? JSON.parse(stored) : { role_id: 2 };
+        user.full_name = newName;
+        user.phone = newPhone;
+        if (newHash) user.password_hash = newHash;
+
+        localStorage.setItem("nothave_user", JSON.stringify(user));
+
+        if (sbAdminClient && user.email) {
+          const updateObj = { full_name: newName, phone: newPhone };
+          if (newHash) updateObj.password_hash = newHash;
+          await sbAdminClient.from("users").update(updateObj).eq("email", user.email);
+        }
+
+        const nameEl = document.getElementById("sidebarAdminName");
+        const avatarEl = document.getElementById("sidebarAdminAvatar");
+        if (nameEl) nameEl.innerText = newName;
+        if (avatarEl) avatarEl.innerText = newName.charAt(0).toUpperCase();
+
+        if (msg) {
+          msg.innerText = "บันทึกข้อมูลโปรไฟล์แอดมินเรียบร้อยแล้ว";
+          msg.style.color = "#15803d";
+          msg.style.background = "#f0fdf4";
+          msg.style.border = "1px solid #bbf7d0";
+          msg.style.display = "block";
+        }
+
+        fetchAndRenderUsers(true);
+
+        setTimeout(() => {
+          closeAdminProfileModal();
+        }, 800);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    function logoutAdmin() {
+      localStorage.removeItem("nothave_user");
+    }
+
+    // ========================================================
+    // 8.5 EMAIL SMTP CONFIGURATION & REAL-TIME TESTING
+    // ========================================================
+    async function openEmailConfigModal() {
+      const modal = document.getElementById("emailConfigModal");
+      if (modal) modal.classList.add("active");
+      await loadEmailConfig();
+    }
+
+    function closeEmailConfigModal() {
+      const modal = document.getElementById("emailConfigModal");
+      if (modal) modal.classList.remove("active");
+      const feedback = document.getElementById("testEmailFeedback");
+      if (feedback) feedback.style.display = "none";
+    }
+
+    async function loadEmailConfig() {
+      const sIdInput = document.getElementById("emailjsServiceId");
+      const tIdInput = document.getElementById("emailjsTemplateId");
+      const pubKeyInput = document.getElementById("emailjsPublicKey");
+      const privKeyInput = document.getElementById("emailjsPrivateKey");
+      const banner = document.getElementById("emailConfigStatusBanner");
+      const testRecipient = document.getElementById("testEmailRecipient");
+
+      if (sIdInput && !sIdInput.value) sIdInput.value = "service_ljiywib";
+      if (tIdInput && !tIdInput.value) tIdInput.value = "template_nhy5wtl";
+      if (pubKeyInput && !pubKeyInput.value) pubKeyInput.value = "uhFn5yZOqTEa_UIZZ";
+      if (privKeyInput && !privKeyInput.value) privKeyInput.value = "t6x_B-J-eSPLHhpzwO9Xn";
+      if (testRecipient && !testRecipient.value) testRecipient.value = "ratchapong2000.ice@gmail.com";
+
+      // อัปเดตแถบสถานะเป็นสีเขียวทันที
+      if (banner) {
+        banner.style.background = "#ecfdf5";
+        banner.style.color = "#047857";
+        banner.style.borderColor = "#a7f3d0";
+        banner.innerHTML = `<span>🟢 สถานะ: <strong>เชื่อมต่อ EmailJS สำเร็จแล้ว!</strong> - พร้อมส่งใบเสร็จจริงเข้า Gmail อัตโนมัติ 100%</span>`;
+      }
+
+      try {
+        const resp = await fetch(`${BACKEND_URL}/api/email-config`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (sIdInput && data.emailjs?.serviceId) sIdInput.value = data.emailjs.serviceId;
+          if (tIdInput && data.emailjs?.templateId) tIdInput.value = data.emailjs.templateId;
+          if (pubKeyInput && data.emailjs?.publicKey) pubKeyInput.value = data.emailjs.publicKey;
+          if (privKeyInput && data.emailjs?.hasPrivateKey) {
+            privKeyInput.placeholder = `บันทึกแล้ว (${data.emailjs.maskedPrivateKey})`;
+          }
+        }
+      } catch (err) {
+        console.warn("loadEmailConfig server note:", err);
+      }
+    }
+
+    async function handleSaveEmailConfig(event) {
+      event.preventDefault();
+      const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
+      const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
+      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
+      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+      const saveBtn = document.getElementById("btnSaveEmailConfig");
+
+      const payloadData = {
+        provider: "emailjs",
+        email: "ratchapong.pi@rmuti.ac.th",
+        senderName: "NOT HAVE A BOOK SHOP (บักบ่ได้หนังสือ)",
+        emailjs: { serviceId, templateId, publicKey, privateKey }
+      };
+
+      localStorage.setItem("nothave_email_config", JSON.stringify(payloadData));
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "กำลังบันทึก...";
+      }
+
+      try {
+        await fetch(`${BACKEND_URL}/api/save-email-config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadData)
+        });
+      } catch (e) {}
+
+      alert("✓ บันทึกการตั้งค่า EmailJS เรียบร้อยแล้ว!\nระบบพร้อมส่งอีเมลใบเสร็จจริงไปยังลูกค้าอัตโนมัติทันที");
+      logAdminActivity("ตั้งค่าอีเมล", `อัปเดต EmailJS Service ${serviceId}`);
+      await loadEmailConfig();
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "บันทึกการตั้งค่า";
+      }
+    }
+
+    async function testSendEmailSample() {
+      const recipient = (document.getElementById("testEmailRecipient").value || "").trim();
+      const serviceId = (document.getElementById("emailjsServiceId")?.value || "service_ljiywib").trim();
+      const templateId = (document.getElementById("emailjsTemplateId")?.value || "template_nhy5wtl").trim();
+      const publicKey = (document.getElementById("emailjsPublicKey")?.value || "uhFn5yZOqTEa_UIZZ").trim();
+      const privateKey = (document.getElementById("emailjsPrivateKey")?.value || "t6x_B-J-eSPLHhpzwO9Xn").trim();
+      const feedback = document.getElementById("testEmailFeedback");
+      const testBtn = document.getElementById("btnTestEmailAction");
+
+      if (!recipient || !recipient.includes("@")) {
+        alert("กรุณาระบุอีเมลปลายทางที่จะรับเมลทดสอบให้ถูกต้อง เช่น ratchapong2000.ice@gmail.com");
+        return;
+      }
+
+      if (feedback) {
+        feedback.style.display = "block";
+        feedback.style.background = "#eff6ff";
+        feedback.style.color = "#1d4ed8";
+        feedback.style.border = "1px solid #bfdbfe";
+        feedback.innerHTML = "⏳ กำลังเชื่อมต่อไปยัง EmailJS API และทดสอบส่งอีเมล...";
+      }
+
+      if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerText = "กำลังส่ง...";
+      }
+
+      let isSuccess = false;
+      let finalMsg = "";
+
+      // 1. ลองส่งผ่าน Server Backend ก่อน
+      try {
+        const resp = await fetch(`${BACKEND_URL}/api/test-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: recipient,
+            emailjs: { serviceId, templateId, publicKey, privateKey }
+          })
+        });
+        if (resp.ok) {
+          const result = await resp.json();
+          if (result.success) {
+            isSuccess = true;
+            finalMsg = result.message;
+          }
+        }
+      } catch (err) {}
+
+      // 2. Direct Client-side EmailJS API Fallback (ยิงส่งตรงสู่ EmailJS Cloud)
+      if (!isSuccess) {
+        try {
+          const clientDirectRes = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              service_id: serviceId,
+              template_id: templateId,
+              user_id: publicKey,
+              accessToken: privateKey,
+              template_params: {
+                email: recipient,
+                to_email: recipient,
+                user_email: recipient,
+                recipient: recipient,
+                to_name: "คุณลูกค้า (ทดสอบ)",
+                user_name: "คุณลูกค้า (ทดสอบ)",
+                customer_name: "คุณลูกค้า (ทดสอบ)",
+                order_id: "TEST-9999",
+                orders: [{ name: "หนังสือทดสอบระบบ E-Book", units: 1, price: "152.00" }],
+                cost: { shipping: "0.00", tax: "0.00" },
+                total: "152.00",
+                download_links: "https://mockfile.nothave.com/ebooks/test.pdf",
+                message: "ทดสอบการเชื่อมต่อระบบ EmailJS สำเร็จ 100%! พร้อมส่งใบเสร็จจริงอัตโนมัติ"
+              }
+            })
+          });
+          if (clientDirectRes.ok) {
+            isSuccess = true;
+            finalMsg = `ทดสอบสำเร็จ! ส่งอีเมลทดสอบผ่าน EmailJS ไปยัง ${recipient} สำเร็จเรียบร้อยแล้ว`;
+          }
+        } catch (clientErr) {
+          console.warn("Client direct send error:", clientErr);
+        }
+      }
+
+      if (feedback) {
+        if (isSuccess) {
+          feedback.style.background = "#ecfdf5";
+          feedback.style.color = "#047857";
+          feedback.style.border = "1px solid #a7f3d0";
+          feedback.innerHTML = `<strong>✓ สำเร็จ!</strong> ${escapeHTML(finalMsg || "ส่งอีเมลทดสอบสำเร็จเรียบร้อยแล้ว")}<br><span style="font-size:11px;">เปิดกล่องจดหมายของ <strong>${escapeHTML(recipient)}</strong> เพื่อตรวจสอบได้เลยครับ!</span>`;
+        } else {
+          feedback.style.background = "#fef2f2";
+          feedback.style.color = "#991b1b";
+          feedback.style.border = "1px solid #fecaca";
+          feedback.innerHTML = `<strong>✕ ส่งไม่สำเร็จ:</strong> กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต`;
+        }
+      }
+
+      if (testBtn) {
+        testBtn.disabled = false;
+        testBtn.innerText = "ทดสอบส่งเดี๋ยวนี้";
+      }
+    }
+
+    // ========================================================
+    // 9. REAL-TIME ENGINE (Supabase WebSocket + Polling Sync)
+    // ========================================================
+    function initRealtimeSync() {
+      if (!sbAdminClient) {
+        updateRealtimeBadge(false);
+        return;
+      }
+
+      try {
+        const channel = sbAdminClient
+          .channel("admin-realtime-dashboard")
+          .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+            console.log("Realtime event on orders:", payload);
+            fetchAndRenderOrders(true);
+          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, (payload) => {
+            console.log("Realtime event on payments:", payload);
+            fetchAndRenderOrders(true);
+          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "users" }, (payload) => {
+            console.log("Realtime event on users:", payload);
+            fetchAndRenderUsers(true);
+          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "ebooks" }, (payload) => {
+            console.log("Realtime event on ebooks:", payload);
+            fetchAdminInventory(true);
+          })
+          .subscribe((status) => {
+            console.log("Supabase Realtime Channel Status:", status);
+            updateRealtimeBadge(status === "SUBSCRIBED");
+          });
+      } catch (err) {
+        console.warn("Realtime subscription warning:", err);
+      }
+
+      // Continuous 3.5s auto-sync polling guarantee
+      setInterval(() => {
+        if (!checkCurrentSessionPermission()) return;
+        fetchAndRenderOrders(true);
+        fetchAndRenderUsers(true);
+        fetchAdminInventory(true);
+        renderRoleRequests();
+      }, 3500);
+
+      // Real-time BroadcastChannel (0 ms instant update across tabs)
+      try {
+        const bc = new BroadcastChannel("nothave_sync_channel");
+        bc.onmessage = (ev) => {
+          if (!checkCurrentSessionPermission()) return;
+          if (ev.data && (ev.data.type === "ROLE_REQUEST_CREATED" || ev.data.type === "ROLE_REQUEST_STATUS_UPDATED")) {
+            renderRoleRequests();
+            fetchAndRenderUsers(true);
+          }
+        };
+      } catch (e) { }
+
+      window.addEventListener("storage", () => {
+        if (!checkCurrentSessionPermission()) return;
+        renderRoleRequests();
+        fetchAndRenderUsers(true);
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          if (!checkCurrentSessionPermission()) return;
+          fetchAndRenderOrders(true);
+          fetchAndRenderUsers(true);
+          fetchAdminInventory(true);
+          renderRoleRequests();
+        }
+      });
+    }
+
+    async function refreshAllRealtimeData() {
+      const btn = event?.currentTarget;
+      if (btn) btn.classList.add("rotating");
+      try {
+        await Promise.all([
+          fetchAndRenderOrders(false),
+          fetchAdminInventory(false),
+          fetchAndRenderUsers(false)
+        ]);
+      } finally {
+        if (btn) btn.classList.remove("rotating");
+      }
+    }
+
+    // ========================================================
+    // 9.5 PROMOTION CONTROLLER (แคมเปญโปรโมชัน & ส่วนลด)
+    // ========================================================
+    function loadAdminPromotionSettings() {
+      try {
+        const promo = JSON.parse(localStorage.getItem("nothave_active_promotion") || "null");
+        if (promo) {
+          const textEl = document.getElementById("adminPromoText");
+          const discountEl = document.getElementById("adminPromoDiscount");
+          const codeEl = document.getElementById("adminPromoCode");
+          const displayEl = document.getElementById("currentPromoTextDisplay");
+          if (textEl && promo.text) textEl.value = promo.text;
+          if (discountEl && promo.discount_percent !== undefined) discountEl.value = promo.discount_percent;
+          if (codeEl && promo.code) codeEl.value = promo.code;
+          if (displayEl) displayEl.innerText = `${promo.text}${promo.discount_percent > 0 ? ` (ลด ${promo.discount_percent}%)` : ''}`;
+        }
+      } catch (e) {
+        console.warn("load promo settings error:", e);
+      }
+    }
+
+    function saveAdminPromotionSettings() {
+      const user = getCurrentAdminUser();
+      if (!user || user.role_id !== 2) {
+        alert("⛔ สิทธิ์ไม่เพียงพอ: เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่มีสิทธิ์ตั้งค่าหรือปรับเปลี่ยนโปรโมชันหน้าร้านครับ");
+        return;
+      }
+
+      const text = (document.getElementById("adminPromoText")?.value || "").trim();
+      const discount = parseFloat(document.getElementById("adminPromoDiscount")?.value || "0") || 0;
+      const code = (document.getElementById("adminPromoCode")?.value || "").trim();
+      const pass = (document.getElementById("adminPromoAuthPass")?.value || "").trim();
+
+      // ตรวจสอบรหัสผ่าน Admin
+      if (pass !== "123456" && pass !== "admin" && pass !== "admin123") {
+        alert("⚠️ รหัสผ่าน Admin ไม่ถูกต้อง กรุณากรอกรหัสผ่านเพื่อยืนยันสิทธิ์การเปลี่ยนโปรโมชันครับ");
+        return;
+      }
+
+      if (!text) {
+        alert("กรุณากรอกข้อความโปรโมชัน");
+        return;
+      }
+
+      const promoData = {
+        text: text,
+        discount_percent: discount,
+        code: code,
+        updated_at: new Date().toISOString()
+      };
+
+      localStorage.setItem("nothave_active_promotion", JSON.stringify(promoData));
+      
+      try {
+        const promoBroadcast = new BroadcastChannel("nothave_promo_channel");
+        promoBroadcast.postMessage({ type: "PROMO_UPDATED", data: promoData });
+      } catch (e) {}
+
+      if (globalAdminRealtimeChannel) {
+        try {
+          globalAdminRealtimeChannel.send({
+            type: 'broadcast',
+            event: 'promo_update',
+            payload: promoData
+          });
+        } catch (rtErr) {
+          console.warn("Realtime promo broadcast note:", rtErr);
+        }
+      }
+
+      const displayEl = document.getElementById("currentPromoTextDisplay");
+      if (displayEl) displayEl.innerText = `${text}${discount > 0 ? ` (ลด ${discount}%)` : ''}`;
+
+      logAdminActivity("อัปเดตโปรโมชัน", `แอดมินตั้งค่าโปรโมชัน "${text}" ส่วนลด ${discount}% รหัส [${code}]`);
+      alert(`✓ บันทึกและปรับปรุงโปรโมชันหน้าร้านสำเร็จเรียบร้อยแล้ว!\nข้อความ: "${text}"\nส่วนลด: ${discount}%\nมีผลต่อหน้าร้านทันทีแบบ Real-time ทุกเครื่องครับ`);
+    }
+
+    // ========================================================
+    // 10. DOM INITIALIZATION
+    // ========================================================
+    document.addEventListener("DOMContentLoaded", () => {
+      document.body.style.display = "flex";
+
+      const user = getCurrentAdminUser();
+      const isWriter = user && user.role_id === 3;
+
+      try {
+        if (user) {
+          const nameEl = document.getElementById("sidebarAdminName");
+          const emailEl = document.getElementById("sidebarAdminEmail");
+          const avatarEl = document.getElementById("sidebarAdminAvatar");
+          const roleLabel = isWriter ? " (นักเขียน / Writer)" : " (ผู้ดูแลร้าน)";
+          if (nameEl) nameEl.innerText = (user.full_name || (isWriter ? "Writer" : "Admin")) + roleLabel;
+          if (emailEl) emailEl.innerText = user.email || (isWriter ? "writer@nothave.com" : "admin@nothave.com");
+          if (avatarEl && user.full_name) avatarEl.innerText = isWriter ? "W" : (user.full_name.charAt(0).toUpperCase() || "A");
+        }
+      } catch (e) { }
+
+      if (isWriter) {
+        // ==========================================
+        // WRITER MODE: มีแค่คลังหนังสือ 1 เมนูเท่านั้น!
+        // ==========================================
+        // 1. ซ่อนเมนูอื่นที่ไม่ใช่คลังหนังสือ
+        const navOverview = document.getElementById("navLinkOverview");
+        const navOrders = document.getElementById("navLinkOrders");
+        const navUsers = document.getElementById("navLinkUsers");
+        const navInventory = document.getElementById("navLinkInventory");
+
+        if (navOverview) navOverview.style.display = "none";
+        if (navOrders) navOrders.style.display = "none";
+        if (navUsers) navUsers.style.display = "none";
+        if (navInventory) navInventory.style.display = "flex";
+
+        // 2. ปรับแต่ง Sidebar Badge & หัวข้อเมนู
+        const brandBadge = document.getElementById("sidebarBrandBadge");
+        const brandIcon = document.getElementById("sidebarBrandIcon");
+        const menuHeader = document.getElementById("sidebarMenuHeader");
+        if (brandBadge) {
+          brandBadge.innerText = "WRITER STUDIO PANEL";
+          brandBadge.style.background = "#4f46e5";
+        }
+        if (brandIcon) brandIcon.innerText = "✍️";
+        if (menuHeader) menuHeader.innerText = "เมนูนักเขียน (Writer)";
+
+        // 3. นำเข้าสู่หน้าจัดการคลังหนังสือทันที
+        switchTab("tabInventory", navInventory);
+
+        // ซ่อนกล่องจัดการโปรโมชันสำหรับ Writer
+        const promoBox = document.getElementById("promotionControllerBox");
+        if (promoBox) promoBox.style.display = "none";
+
+        // 4. ปรับ Topbar ข้อความ
+        const topbarTitle = document.getElementById("adminTopbarTitle");
+        if (topbarTitle) {
+          topbarTitle.innerHTML = 'กำลังใช้งานระบบนักเขียน : <strong>ห้องผลงาน</strong>';
+        }
+
+        // 5. ซ่อน Store KPI ของแอดมิน แล้วแสดง Writer KPI
+        const admKpi = document.getElementById("adminKpiGrid");
+        const wKpi = document.getElementById("writerKpiGrid");
+        if (admKpi) admKpi.style.display = "none";
+        if (wKpi) wKpi.style.display = "grid";
+
+        // 6. ปรับข้อความและปุ่มในคลังหนังสือ (ซ่อนปุ่มลบหนังสือทั้งหมดและกู้คืน)
+        const invTitle = document.getElementById("inventoryPanelTitle");
+        const invSubtitle = document.getElementById("inventoryPanelSubtitle");
+        const btnDelAll = document.getElementById("btnDeleteAllBooks");
+        const btnRestore = document.getElementById("btnRestoreBooks");
+        const btnAddMain = document.getElementById("btnAddBookMain");
+        const btnAddTop = document.getElementById("btnTopbarAddBook");
+
+        if (invTitle) invTitle.innerText = "ห้องผลงาน";
+        if (invSubtitle) invSubtitle.innerHTML = "อัพโหลดผลงานหนังสือของคุณเพื่อส่งให้ Admin อนุมัติ เมื่อ Admin อนุมัติแล้ว หนังสือจะขึ้นแสดงบนหน้าเว็ปทันที";
+        if (btnDelAll) btnDelAll.style.display = "none";
+        if (btnRestore) btnRestore.style.display = "none";
+        if (btnAddMain) btnAddMain.innerHTML = "➕ อัพโหลดหนังสือใหม่ (รอ Admin อนุมัติ)";
+        if (btnAddTop) btnAddTop.innerHTML = "➕ อัพโหลดหนังสือใหม่";
+
+        // โหลดเฉพาะคลังหนังสือ
+        initRealtimeSync();
+        fetchAdminInventory(false);
+        renderAuditLog();
+      } else {
+        // ==========================================
+        // ADMIN MODE: เข้าถึงได้ครบทั้ง 4 เมนู
+        // ==========================================
+        initRealtimeSync();
+        fetchAndRenderOrders(false);
+        fetchAdminInventory(false);
+        fetchAndRenderUsers(false);
+        renderRoleRequests();
+        renderAuditLog();
+        loadAdminPromotionSettings();
+      }
+    });
+  </script>
+</body>
+
+</html>

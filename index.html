@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOT HAVE A BOOK SHOP | บักบ่ได้หนังสือ - ร้านขาย E-Book ออนไลน์</title>
+  <!-- Google Fonts: Barlow Condensed (Slim/Condensed Book☆Walker style) & Prompt & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Prompt:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PDF.js for rendering real PDF pages -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+  <!-- 2. SITE HEADER -->
+  <header class="site-header">
+    <div class="header-top">
+      <!-- BRAND LOGO -->
+      <a href="index.html" class="brand-logo" id="logoLink">
+        <div class="logo-stripes">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="logo-text-group">
+          <div class="logo-title">
+            NOT HAVE A BOOK SHOP <span class="star">★</span>
+          </div>
+          <div class="logo-subtitle">
+            บักบ่ได้หนังสือ ร้าน eBook การ์ตูน นิยาย สำหรับทุกคน
+          </div>
+        </div>
+      </a>
+
+      <!-- SEARCH BAR (Center) -->
+      <div class="search-container">
+        <select class="search-scope-select" id="searchScope">
+          <option value="all">ทั้งหมด</option>
+          <option value="title">ชื่อเรื่อง</option>
+          <option value="author">นักเขียน</option>
+        </select>
+        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อหนังสือ, มังงะ, หนังสือทั่วไป, นักเขียน..." autocomplete="off">
+        <button class="search-btn" onclick="applyFilters()" title="ค้นหา">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- HEADER ACTIONS (Right - สไตล์ตามตัวอย่างที่ 2) -->
+      <div class="header-actions">
+        <!-- Cart Button -->
+        <button class="cart-icon-btn" onclick="openCartModal()" id="cartBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          รถเข็น
+          <span class="cart-badge" id="cartCountBadge" style="display:none;">0</span>
+        </button>
+
+        <!-- 1. GUEST ACTIONS (ยังไม่ล็อกอิน - แสดงเฉพาะเข้าสู่ระบบ/สมัครสมาชิก) -->
+        <div id="guestActions" style="display:flex; align-items:center; gap:8px;">
+          <button class="btn-login" onclick="openAuthModal('login')">เข้าสู่ระบบ</button>
+          <button class="btn-register" onclick="openAuthModal('register')">สมัครสมาชิก</button>
+        </div>
+
+        <!-- 2. CUSTOMER ACTIONS (ลูกค้าทั่วไปล็อกอิน) -->
+        <div id="customerActions" style="display:none; align-items:center; gap:8px;">
+          <!-- YOUTUBE-STYLE PROFILE DROPDOWN WRAPPER -->
+          <div class="profile-dropdown-wrapper" id="profileDropdownWrapper">
+            <button class="user-pill clickable-profile-btn" onclick="toggleProfileDropdown(event)" id="profileDropdownBtn" title="เมนูบัญชีและโปรไฟล์">
+              <span id="headerUserAvatar" style="display:flex; align-items:center;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+              <span class="user-name" id="customerUserName">ลูกค้า</span>
+              <span class="dropdown-arrow-icon" id="custArrowIcon" style="margin-left:2px;">▼</span>
+            </button>
+
+            <!-- YOUTUBE-STYLE PROFILE DROPDOWN MENU -->
+            <div class="youtube-profile-dropdown" id="profileDropdownMenu">
+              <!-- User Card Header -->
+              <div class="dropdown-user-header">
+                <div class="dropdown-avatar" id="dropdownAvatarInitial">U</div>
+                <div class="dropdown-user-meta">
+                  <div class="dropdown-user-name" id="dropdownUserName">สมชาย สายอ่าน</div>
+                  <div class="dropdown-user-email" id="dropdownUserEmail">somchai@gmail.com</div>
+                  <a class="dropdown-profile-link" onclick="openProfileModal(); closeProfileDropdown();">
+                    ตั้งค่าโปรไฟล์และบัญชี
+                  </a>
+                </div>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <!-- Section 1: บัญชีและการจัดการ -->
+              <div class="dropdown-menu-list">
+                <button class="dropdown-menu-item" onclick="openProfileModal(); closeProfileDropdown();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">การตั้งค่าโปรไฟล์ &amp; รหัสผ่าน</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <button class="dropdown-menu-item" onclick="openOrdersModal(); closeProfileDropdown();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">คลังหนังสือของฉัน (My Library)</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <button class="dropdown-menu-item" onclick="event.stopPropagation(); closeProfileDropdown(); openRoleRequestModal();" style="color:#7c3aed; font-weight:600;">
+                  <span class="menu-icon">💬</span>
+                  <span class="menu-title">ส่งขอความอนุมัติ</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <button class="dropdown-menu-item" onclick="openAuthModal('login'); closeProfileDropdown();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="8.5" cy="7" r="4"/>
+                      <polyline points="17 11 19 13 23 9"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">สลับบัญชีผู้ใช้</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <a href="admin.html" class="dropdown-menu-item" id="dropdownWriterStudioLink" style="display:none; text-decoration:none; color:#7c3aed; font-weight:700;">
+                  <span class="menu-icon">✍️</span>
+                  <span class="menu-title">ห้องผลงาน</span>
+                  <span class="menu-arrow">›</span>
+                </a>
+                <a href="admin.html" class="dropdown-menu-item" id="dropdownAdminCmsLink" style="display:none; text-decoration:none;">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/>
+                      <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title" style="color:#0284c7; font-weight:700;">แผงควบคุมหลังบ้าน CMS</span>
+                  <span class="menu-arrow">›</span>
+                </a>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <div class="dropdown-menu-list">
+                <button class="dropdown-menu-item menu-logout" onclick="closeProfileDropdown(); handleLogout();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">ออกจากระบบ</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. ADMIN ACTIONS (ผู้ดูแลร้านล็อกอิน - คลีนเรียบง่าย ไม่รกหน้าร้าน) -->
+        <div id="adminActions" style="display:none; align-items:center; gap:8px;">
+          <!-- ADMIN PROFILE DROPDOWN WRAPPER -->
+          <div class="profile-dropdown-wrapper" id="adminDropdownWrapper">
+            <button class="user-pill clickable-profile-btn" onclick="toggleAdminDropdown(event)" style="background:#eff6ff; border-color:#93c5fd;" title="เมนูผู้ดูแลร้าน">
+              <span style="display:flex; align-items:center;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </span>
+              <span class="user-name" id="adminUserName">ผู้ดูแลร้าน</span>
+              <span class="dropdown-arrow-icon" id="adminArrowIcon" style="margin-left:2px;">▼</span>
+            </button>
+
+            <!-- ADMIN DROPDOWN -->
+            <div class="youtube-profile-dropdown" id="adminDropdownMenu">
+              <div class="dropdown-user-header">
+                <div class="dropdown-avatar" style="background:linear-gradient(135deg, #0f172a, #0284c7);">A</div>
+                <div class="dropdown-user-meta">
+                  <div class="dropdown-user-name">ผู้ดูแลร้าน (Admin)</div>
+                  <div class="dropdown-user-email">admin@nothave.com</div>
+                  <a class="dropdown-profile-link" onclick="openProfileModal(); closeAdminDropdown();">
+                    ตั้งค่าโปรไฟล์และบัญชี
+                  </a>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-menu-list">
+                <a href="admin.html" class="dropdown-menu-item" style="text-decoration:none; font-weight:700; color:#0284c7;">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/>
+                      <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">เปิดระบบจัดการหลังบ้าน (CMS)</span>
+                  <span class="menu-arrow">›</span>
+                </a>
+                <button class="dropdown-menu-item" onclick="event.stopPropagation(); closeAdminDropdown(); openRoleRequestModal();" style="color:#7c3aed; font-weight:600;">
+                  <span class="menu-icon">💬</span>
+                  <span class="menu-title">ส่งขอความอนุมัติ</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <button class="dropdown-menu-item" onclick="openProfileModal(); closeAdminDropdown();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">แก้ไขโปรไฟล์ &amp; รหัสผ่าน</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+                <button class="dropdown-menu-item" onclick="openAuthModal('login'); closeAdminDropdown();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="8.5" cy="7" r="4"/>
+                      <polyline points="17 11 19 13 23 9"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">สลับบัญชีผู้ใช้</span>
+                  <span class="menu-arrow">›</span>
+                </button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-menu-list">
+                <button class="dropdown-menu-item menu-logout" onclick="closeAdminDropdown(); handleLogout();">
+                  <span class="menu-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                  </span>
+                  <span class="menu-title">ออกจากระบบ</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECONDARY CATEGORY NAVBAR -->
+    <nav class="header-nav">
+      <div class="nav-item active" onclick="clearAllFilters()" id="navTabAll">
+        มังงะ &amp; หนังสือทั่วไป
+      </div>
+      <div class="nav-item" onclick="filterByCategoryTab(1)" id="navTab1">
+        มังงะยอดนิยม
+      </div>
+      <div class="nav-item" onclick="filterByCategoryTab(2)" id="navTab2">
+        หนังสือทั่วไป
+      </div>
+      <div class="nav-item" onclick="filterByCategoryTab(3)" id="navTab3">
+        นิยายทั่วไป
+      </div>
+      <div class="nav-item" onclick="filterByCategoryTab(4)" id="navTab4">
+        อาร์ตบุ๊ค
+      </div>
+    </nav>
+  </header>
+
+  <!-- 3. MAIN CONTENT CONTAINER -->
+  <main class="main-wrapper">
+
+    <!-- BREADCRUMB (เชื่อมโยงแบบไดนามิก ใช้งานได้จริง) -->
+    <div class="breadcrumb" id="mainBreadcrumb">
+      <a href="index.html" onclick="clearAllFilters(); return false;" title="กลับหน้าหลัก">หน้าหลัก</a>
+      <span class="bc-sep" id="bcSepCategory" style="display:none;">&gt;</span>
+      <a href="javascript:void(0)" id="breadcrumbCategory" onclick="onBreadcrumbCategoryClick()" style="display:none;" title="คลิกเพื่อดูกลุ่มนี้"></a>
+      <span class="bc-sep" id="bcSepBook" style="display:none;">&gt;</span>
+      <span id="breadcrumbCurrent" class="current-crumb" style="display:none;"></span>
+    </div>
+
+    <!-- SHELF RECENTLY VIEWED (หนังสือที่คุณเคยเปิดดู จดจำตามที่ User เคยทำ) -->
+    <section class="shelf-section" id="recentlyViewedSection" style="display:none; border-left:4px solid var(--primary-blue); margin-bottom:24px;">
+      <div class="shelf-header">
+        <div class="shelf-title-group">
+          <span class="shelf-title">หนังสือที่คุณเคยเปิดดู (Recently Viewed)</span>
+        </div>
+      </div>
+      <div class="shelf-horizontal-scroll" id="shelfRecentlyViewed">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- SHELF 1: มาใหม่ วางแผงก่อนทุกที่ (เป๊ะตามรูปที่ 2) -->
+    <section class="shelf-section">
+      <div class="shelf-header">
+        <div class="shelf-title-group">
+          <span class="shelf-title" id="shelfPromoTitleText">มาใหม่ วางแผงก่อนทุกที่ 15 วัน พร้อมส่วนลดสูงสุด</span>
+          <span class="shelf-highlight" id="shelfHighlightDiscount">30%</span>
+        </div>
+        <span class="shelf-view-all" onclick="clearAllFilters()">ดูทั้งหมด</span>
+      </div>
+      <div class="shelf-horizontal-scroll" id="shelfNewArrivals">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- SECTION TITLE WITH BLUE VERTICAL BAR (เป๊ะตามรูปที่ 1) -->
+    <div class="section-heading-bar">
+      <div class="blue-bar"></div>
+      <h1 id="catalogHeadingTitle">หนังสือทั้งหมด</h1>
+    </div>
+
+    <!-- CATALOG GRID WITH SIDEBAR FILTER (เป๊ะตามรูปที่ 1) -->
+    <div class="catalog-container">
+
+      <!-- LEFT SIDEBAR FILTER -->
+      <aside class="sidebar-filter">
+        <div class="filter-header">
+          <h3>กรองผลลัพธ์</h3>
+          <button class="btn-clear-filter" onclick="clearAllFilters()">ล้างทั้งหมด</button>
+        </div>
+
+        <!-- Filter 1: หมวดหมู่ (กดเปิด/ปิด ยุบ/ขยาย ได้) -->
+        <div class="filter-group">
+          <div class="filter-group-title" onclick="toggleFilterGroup('categoryOptions', this)" title="คลิกเพื่อเปิด/ปิดหมวดหมู่">
+            <span>หมวดหมู่</span>
+            <span class="filter-caret">⌃</span>
+          </div>
+          <div class="filter-options-body" id="categoryOptions">
+            <label class="filter-option">
+              <span><input type="checkbox" class="category-checkbox" value="1" onchange="applyFilters()"> มังงะ</span>
+              <span class="filter-count" id="catCount1">(7)</span>
+            </label>
+            <label class="filter-option">
+              <span><input type="checkbox" class="category-checkbox" value="2" onchange="applyFilters()"> หนังสือทั่วไป</span>
+              <span class="filter-count" id="catCount2">(1)</span>
+            </label>
+            <label class="filter-option">
+              <span><input type="checkbox" class="category-checkbox" value="3" onchange="applyFilters()"> นิยาย - ทั่วไป</span>
+              <span class="filter-count" id="catCount3">(1)</span>
+            </label>
+            <label class="filter-option">
+              <span><input type="checkbox" class="category-checkbox" value="4" onchange="applyFilters()"> อาร์ตบุ๊ค</span>
+              <span class="filter-count" id="catCount4">(1)</span>
+            </label>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- MAIN CATALOG CONTENT -->
+      <section class="catalog-content">
+        <!-- TOOLBAR: Sort & View Controls -->
+        <div class="catalog-toolbar">
+          <div class="sort-control">
+            <span>เรียงตาม</span>
+            <select class="sort-select" id="sortSelect">
+              <option value="popular">ความนิยม</option>
+              <option value="price-asc">ราคา: ต่ำไปสูง</option>
+              <option value="price-desc">ราคา: สูงไปต่ำ</option>
+              <option value="name-asc">ชื่อหนังสือ ก-ฮ</option>
+            </select>
+          </div>
+
+          <div class="toolbar-right">
+            <span class="items-count" id="booksCount">1-12 จาก 12</span>
+            <div class="view-mode-btns">
+              <button class="btn-view-mode active" id="btnViewGrid" onclick="setViewMode('grid')" title="มุมมองตาราง (Grid View)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+              </button>
+              <button class="btn-view-mode" id="btnViewList" onclick="setViewMode('list')" title="มุมมองรายการ (List View)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/>
+                  <line x1="8" y1="12" x2="21" y2="12"/>
+                  <line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/>
+                  <line x1="3" y1="12" x2="3.01" y2="12"/>
+                  <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK CARDS GRID -->
+        <div class="books-grid" id="booksGrid">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+    </div>
+
+
+  </main>
+
+  <!-- 4. SITE FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-title">NOT HAVE A BOOK SHOP (บักบ่ได้หนังสือ)</div>
+        <p style="margin-bottom:8px; line-height:1.6;">
+          ร้านจำหน่ายหนังสือดิจิทัล E-Book มังงะ หนังสือทั่วไป และนิยายคุณภาพ ครบทุกหมวดหมู่ยอดนิยม<br>
+          สั่งซื้อง่าย สะดวก รวดเร็ว ชำระเงินผ่าน PromptPay QR Code รับไฟล์พร้อมอ่านได้ทันที
+        </p>
+        <p style="color:#888;">บริการสั่งซื้อตลอด 24 ชั่วโมง | คลังหนังสือ E-Book ลิขสิทธิ์แท้</p>
+      </div>
+      <div>
+        <div class="footer-title">หมวดหมู่แนะนำ</div>
+        <ul class="footer-links">
+          <li><a href="#" onclick="filterByCategoryTab(1)">มังงะ &amp; คอมมิค</a></li>
+          <li><a href="#" onclick="filterByCategoryTab(2)">หนังสือทั่วไป</a></li>
+          <li><a href="#" onclick="filterByCategoryTab(3)">นิยายทั่วไป &amp; แฟนตาซี</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 NOT HAVE A BOOK SHOP (บักบ่ได้หนังสือ). All rights reserved.
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       MODALS & POPUPS
+       ========================================== -->
+
+  <!-- MODAL 1: ทดลองอ่าน 3 หน้า (Sample Preview Reader) -->
+  <div class="modal-overlay" id="sampleModal">
+    <div class="modal-box" style="max-width: 640px; padding: 22px;">
+      <button class="modal-close-btn" onclick="closeModal('sampleModal')">✕</button>
+      
+      <!-- Top Info -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">📖</span>
+          <span class="modal-title" style="margin:0; font-size:16px;">ทดลองอ่าน E-Book (จำกัด 3 หน้าแรก)</span>
+        </div>
+        <div id="samplePageBadge" style="background:#f1f5f9; color:#0f172a; font-size:12px; font-weight:700; padding:4px 10px; border-radius:12px; border:1px solid #cbd5e1;">
+          หน้า 1 / 3
+        </div>
+      </div>
+
+      <!-- Book Header Meta -->
+      <div style="display:flex; gap:14px; margin-bottom:12px; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; align-items:center;">
+        <img id="sampleBookCover" src="" style="width:55px; height:80px; object-fit:cover; border-radius:4px; box-shadow:var(--shadow-sm);">
+        <div style="flex:1;">
+          <h3 id="sampleBookTitle" style="font-size:15px; margin:0 0 3px 0; color:#0f172a;">ชื่อหนังสือ</h3>
+          <p id="sampleBookAuthor" style="font-size:12px; color:#64748b; margin:0 0 6px 0;">ผู้แต่ง: -</p>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="background:#eef6ff; color:#0284c7; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">
+              ✨ ฉบับตัวอย่าง (3 หน้า)
+            </span>
+            <span id="sampleBookPriceTag" style="font-size:12.5px; font-weight:700; color:#16a34a;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-PAGE READER CONTAINER -->
+      <div id="sampleReaderBody" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:18px; min-height:260px; max-height:300px; overflow-y:auto; font-size:13.5px; line-height:1.8; color:#334155;">
+        <!-- Page Content injected dynamically -->
+      </div>
+
+      <!-- Navigation & Controls -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <div style="display:flex; gap:6px;">
+          <button type="button" id="btnSamplePrev" onclick="changeSamplePage(-1)" class="btn-primary-action" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 14px; width:auto; font-size:12px; font-weight:600;">
+            ‹ หน้าก่อนหน้า
+          </button>
+          <button type="button" id="btnSampleNext" onclick="changeSamplePage(1)" class="btn-primary-action" style="background:#0284c7; color:#fff; padding:7px 16px; width:auto; font-size:12px; font-weight:600;">
+            หน้าถัดไป ›
+          </button>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-primary-action" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 18px; width:auto; font-size:12.5px; font-weight:600;" onclick="closeModal('sampleModal')">
+            ปิด
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: อ่านหนังสือฉบับเต็ม (Full E-Book Reader Modal) -->
+  <div class="modal-overlay" id="fullReaderModal">
+    <div class="modal-box wide" style="max-width: 780px; padding: 22px;">
+      <button class="modal-close-btn" onclick="closeModal('fullReaderModal')">✕</button>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px;">📚</span>
+          <h3 id="fullReaderTitle" style="font-size:16px; font-weight:700; color:#0f172a; margin:0;">ชื่อหนังสือ</h3>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span id="fullReaderPageBadge" style="background:#dcfce7; color:#15803d; font-size:12px; font-weight:700; padding:4px 10px; border-radius:12px; border:1px solid #bbf7d0;">
+            ✓ ฉบับเต็ม (Full Edition)
+          </span>
+          <button type="button" id="btnFullReaderDownload" class="btn-primary-action" style="background:#16a34a; padding:6px 14px; font-size:12px; width:auto; font-weight:700;">
+            📥 ดาวน์โหลด PDF
+          </button>
+        </div>
+      </div>
+
+      <div id="fullReaderContentBody" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:24px; min-height:380px; max-height:460px; overflow-y:auto; font-size:14px; line-height:1.9; color:#1e293b;">
+        <!-- Full content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ตะกร้าสินค้า (Cart Modal) -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('cartModal')">✕</button>
+      <div class="modal-title">ตะกร้าสินค้าของคุณ</div>
+      <div class="cart-items-container" id="cartItemsList">
+        <!-- Rendered by JS -->
+      </div>
+      <div class="cart-summary">
+        <span>ยอดรวมชำระทั้งหมด:</span>
+        <span class="total-price" id="cartTotalPrice">฿0.00</span>
+      </div>
+      <button class="btn-primary-action" id="btnCartCheckout" onclick="openCheckoutModal()">
+        ดำเนินการสั่งซื้อและชำระเงินจำลอง ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ชำระเงินผ่าน PromptPay QR & เด้งเข้า Gmail (QR Checkout Modal) -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal-box" style="max-width: 440px; padding: 22px;">
+      <button class="modal-close-btn" onclick="closeModal('checkoutModal')">✕</button>
+      <div class="modal-title" style="display:flex; align-items:center; gap:8px; font-size:17px; margin-bottom:14px;">
+        ชำระเงินผ่าน PromptPay QR Code
+      </div>
+
+      <!-- PROMPTPAY QR CARD (สไตล์ธนาคารแห่งประเทศไทย) -->
+      <div class="promptpay-card" style="background:#fff; border:2px solid #003d79; border-radius:12px; overflow:hidden; box-shadow:0 4px 14px rgba(0,61,121,0.12); margin-bottom:16px;">
+        <div style="background:#003d79; color:#fff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; letter-spacing:0.5px;">
+            Thai QR Payment
+          </div>
+          <span style="font-size:11px; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:10px; font-weight:600;">พร้อมเพย์</span>
+        </div>
+
+        <div style="padding:16px; text-align:center;">
+          <div style="font-size:12px; color:#475569; margin-bottom:8px;">เปิดแอปธนาคารเพื่อสแกน QR Code ชำระเงิน</div>
+          <div style="display:inline-block; padding:10px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <img id="checkoutQrImg" class="qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NOT_HAVE_A_BOOK_SHOP_QR_PAYMENT" alt="PromptPay QR" style="width:190px; height:190px; display:block;">
+          </div>
+          <div style="margin-top:10px; font-size:12.5px; color:#334155;">
+            ผู้รับเงิน: <strong>NOT HAVE A BOOK SHOP</strong>
+          </div>
+          <div style="font-size:22px; font-weight:800; color:#0284c7; margin-top:4px;" id="checkoutTotalDisplay">฿0.00</div>
+        </div>
+      </div>
+
+      <!-- BUYER EMAIL & NAME INFO -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:14px;">
+        <div style="font-size:12.5px; font-weight:700; color:#1e293b; margin-bottom:8px;">
+          อีเมลผู้ซื้อ (สำหรับรับใบเสร็จและลิงก์ดาวน์โหลด)
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="display:block; font-size:11px; color:#64748b; margin-bottom:3px;">ชื่อผู้ซื้อ</label>
+          <input type="text" id="checkoutBuyerName" class="form-control" placeholder="ชื่อของคุณ" style="padding:7px 10px; font-size:13px; font-family:inherit;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; color:#64748b; margin-bottom:3px;">อีเมล (Email) <span style="color:#ef4444;">*</span></label>
+          <input type="email" id="checkoutBuyerEmail" class="form-control" placeholder="yourname@gmail.com" required style="padding:7px 10px; font-size:13px; font-family:inherit;">
+          <small style="color:#0284c7; font-size:11px; display:block; margin-top:4px;">
+            เมื่อกดปุ่ม ระบบจะส่งใบเสร็จและลิงก์อ่าน/ดาวน์โหลดไปยังอีเมลของคุณโดยอัตโนมัติทันที
+          </small>
+        </div>
+      </div>
+
+      <!-- SUBMIT BUTTON -->
+      <button id="btnSubmitOrderAction" class="btn-primary-action" style="background:linear-gradient(135deg, #16a34a, #15803d); width:100%; padding:12px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="submitOrder()">
+        ยืนยันการชำระเงิน
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: ชำระเงินสำเร็จ (Payment Success Modal) -->
+  <div class="modal-overlay" id="paymentSuccessModal">
+    <div class="modal-box" style="max-width: 440px; padding: 26px; text-align: center;">
+      <button class="modal-close-btn" onclick="closeModal('paymentSuccessModal')">✕</button>
+      <div style="width:60px; height:60px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:32px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+        ✓
+      </div>
+      <div class="modal-title" style="color:#16a34a; font-size:20px; margin-bottom:8px;">
+        ชำระเงินสำเร็จเรียบร้อย!
+      </div>
+      <p style="font-size:13px; color:#475569; margin-bottom:14px; line-height:1.6;">
+        รหัสคำสั่งซื้อ <strong id="successOrderIdDisplay">#12345</strong> ยอดรวม <strong style="color:#0284c7;" id="successTotalDisplay">฿0.00</strong><br>
+        ผู้สั่งซื้อ: <strong id="successEmailDisplay" style="color:#0f172a;">-</strong>
+      </p>
+
+      <div id="successEmailDeliveryBadge" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin-bottom:18px; font-size:12px; color:#166534; text-align:left;">
+        <strong>✓ ยืนยันการสั่งซื้อสำเร็จ:</strong> หนังสือได้รับการปลดล็อกเข้าบัญชีของคุณแล้ว สามารถคลิกปุ่ม <strong>[เปิดคลังหนังสือเพื่อดาวน์โหลด]</strong> เพื่ออ่านได้ทันที
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary-action" style="background:#16a34a; padding:11px; font-weight:700;" onclick="closeModal('paymentSuccessModal'); openOrdersModal();">
+          📥 เปิดคลังหนังสือเพื่อดาวน์โหลดทันที
+        </button>
+        <a id="btnSendViaGmailFallback" href="#" target="_blank" class="btn-primary-action" style="display:none; background:#ea4335; text-decoration:none; align-items:center; justify-content:center; gap:6px; padding:10px; font-size:13px; font-weight:600;">
+          ✉️ ส่งใบเสร็จเข้า Gmail ให้ทันที (1 คลิก)
+        </a>
+        <a id="btnOpenGmailDirect" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" class="btn-primary-action" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; font-size:13px;">
+          📬 เปิดกล่องจดหมายอีเมล (Inbox)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ประวัติคำสั่งซื้อและดาวน์โหลด (Orders & Download) -->
+  <div class="modal-overlay" id="ordersModal">
+    <div class="modal-box wide">
+      <button class="modal-close-btn" onclick="closeModal('ordersModal')">✕</button>
+      <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        <span>ประวัติคำสั่งซื้อ &amp; คลังดาวน์โหลด E-Book</span>
+      </div>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:4px solid #0284c7; padding:12px 14px; font-size:12.5px; margin-bottom:14px; color:#334155; border-radius:4px; line-height:1.6;">
+        <div style="font-weight:700; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <span>📌</span> <span>ข้อกำหนดและสิทธิ์การดาวน์โหลด E-Book:</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; font-size:12px;">
+          <div>🔒 <strong>คำสั่งซื้อที่ยังไม่ยืนยัน:</strong> ไม่สามารถเปิดลิงก์ดาวน์โหลดฉบับเต็มได้ (สามารถดูได้เฉพาะตัวอย่างทดลองอ่าน 3 หน้า)</div>
+          <div>✓ <strong>คำสั่งซื้อที่ยืนยันการชำระเงินแล้ว:</strong> สามารถคลิกปุ่ม <strong>[เปิดอ่านฉบับเต็ม]</strong> หรือ <strong>[ดาวน์โหลด PDF]</strong> ได้ทันที 100%</div>
+        </div>
+      </div>
+      <div id="ordersListContainer" style="max-height:450px; overflow-y:auto;">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: โปรไฟล์ & ตั้งค่าบัญชีผู้ใช้ (Profile & Account Settings) -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-box" style="max-width:500px; padding:24px;">
+      <button class="modal-close-btn" onclick="closeModal('profileModal')">✕</button>
+      
+      <div class="modal-title" style="margin-bottom:16px;">
+        โปรไฟล์และการตั้งค่าบัญชีผู้ใช้
+      </div>
+
+      <!-- USER CARD BANNER (เรียบง่าย ไม่มีแต้ม ไม่เน้นระบบ Member) -->
+      <div style="background:linear-gradient(135deg, #0284c7, #0284f4); color:#fff; border-radius:12px; padding:16px 18px; margin-bottom:18px; display:flex; align-items:center; gap:16px; box-shadow:0 4px 12px rgba(2, 132, 199, 0.25);">
+        <div id="profileCardAvatar" style="width:52px; height:52px; border-radius:50%; background:#fff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+          U
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div id="profileCardName" style="font-weight:700; font-size:16px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+              ลูกค้า
+            </div>
+            <span id="profileCardRole" style="background:rgba(255,255,255,0.2); font-size:11px; padding:2px 8px; border-radius:12px; font-weight:600;">
+              บัญชีผู้ใช้งาน
+            </span>
+          </div>
+          <div id="profileCardEmail" style="font-size:12px; opacity:0.9; margin-top:2px;">
+            customer@gmail.com
+          </div>
+          <div style="margin-top:4px; font-size:11.5px; opacity:0.85;">
+            รหัสผู้ใช้: #<span id="profileUserId">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE EDIT FORM -->
+      <form id="profileForm" onsubmit="handleSaveProfile(event)">
+        <div style="font-weight:700; font-size:13px; color:#334155; margin-bottom:10px;">
+          ข้อมูลส่วนตัว
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">
+            ชื่อ - นามสกุล <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="text" id="profileFullName" required style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-family:inherit;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">
+            อีเมล (Email) <span style="font-size:11px; color:#64748b; font-weight:normal;">(บัญชีหลักของระบบ)</span>
+          </label>
+          <input type="email" id="profileEmail" readonly style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; border-radius:6px; font-size:13px; font-family:inherit; cursor:not-allowed;">
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">
+            เบอร์โทรศัพท์ (Phone Number)
+          </label>
+          <input type="tel" id="profilePhone" placeholder="เช่น 081-234-5678" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-family:inherit;">
+        </div>
+
+        <!-- PASSWORD SECTION -->
+        <div style="border-top:1px solid #e2e8f0; padding-top:14px; margin-top:14px;">
+          <div style="font-weight:700; font-size:13px; color:#334155; margin-bottom:10px;">
+            ตั้งค่ารหัสผ่านใหม่
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+            <div>
+              <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
+                รหัสผ่านใหม่
+              </label>
+              <input type="password" id="profileNewPassword" placeholder="เว้นว่างไว้หากไม่เปลี่ยน" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12.5px; font-family:inherit;">
+            </div>
+            <div>
+              <label style="display:block; font-size:11.5px; font-weight:600; color:#475569; margin-bottom:4px;">
+                ยืนยันรหัสผ่านใหม่อีกครั้ง
+              </label>
+              <input type="password" id="profileConfirmPassword" placeholder="พิมพ์ซ้ำเพื่อยืนยัน" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12.5px; font-family:inherit;">
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATION / FEEDBACK MESSAGE -->
+        <div id="profileSaveMsg" style="display:none; padding:8px 12px; border-radius:6px; font-size:12.5px; margin-bottom:12px; text-align:center; font-weight:600;"></div>
+
+        <!-- ACTIONS -->
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-cancel" onclick="closeModal('profileModal')" style="padding:8px 16px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">
+            ยกเลิก
+          </button>
+          <button type="submit" id="btnSaveProfile" style="padding:8px 20px; background:#0084f4; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 6px rgba(0,132,244,0.3); transition:all 0.2s;">
+            บันทึกข้อมูลโปรไฟล์
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: เข้าสู่ระบบ / สมัครสมาชิก (Auth Modal) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box" style="max-width:440px;">
+      <button class="modal-close-btn" onclick="closeModal('authModal')">✕</button>
+      <div style="display:flex; border-bottom:2px solid #eee; margin-bottom:16px;">
+        <button id="tabLoginBtn" class="nav-item active" style="flex:1; justify-content:center;" onclick="switchAuthTab('login')">
+          เข้าสู่ระบบ
+        </button>
+        <button id="tabRegisterBtn" class="nav-item" style="flex:1; justify-content:center;" onclick="switchAuthTab('register')">
+          สมัครสมาชิกใหม่
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>อีเมล</label>
+          <input type="text" id="loginEmail" class="form-control" placeholder="อีเมล" required>
+        </div>
+        <div class="form-group">
+          <label>รหัสผ่าน</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary-action">เข้าสู่ระบบ</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)" style="display:none;">
+        <div class="form-group">
+          <label>ชื่อ-นามสกุล</label>
+          <input type="text" id="regFullName" class="form-control" placeholder="ชื่อและนามสกุลของคุณ" required>
+        </div>
+        <div class="form-group">
+          <label>อีเมล</label>
+          <input type="email" id="regEmail" class="form-control" placeholder="อีเมล" required>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input type="tel" id="regPhone" class="form-control" placeholder="08x-xxx-xxxx" required>
+        </div>
+        <div class="form-group">
+          <label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+          <input type="password" id="regPassword" class="form-control" placeholder="กำหนดรหัสผ่าน" minlength="6" required>
+        </div>
+        <button type="submit" class="btn-primary-action" style="background:#28a745;">สมัครสมาชิก</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ป็อปอัปแจ้งผลสถานะ (Custom Alert & Success Popup Modal) -->
+  <div class="modal-overlay" id="customAlertModal" style="z-index: 2100;">
+    <div class="modal-box" style="max-width: 410px; padding: 28px 24px; text-align: center; border-radius: 14px; box-shadow: 0 20px 45px rgba(0,0,0,0.18); animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+      <button class="modal-close-btn" onclick="closeModal('customAlertModal')">✕</button>
+      
+      <!-- Icon Container (Clean Professional SVG Icon) -->
+      <div id="alertModalIcon" style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; background: #ecfdf5; border: 1px solid #d1fae5; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h3 id="alertModalTitle" style="font-size: 19px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+        สมัครสมาชิกสำเร็จ
+      </h3>
+
+      <!-- Message -->
+      <p id="alertModalMessage" style="font-size: 13.5px; color: #475569; margin-bottom: 16px; line-height: 1.6;">
+        ยินดีต้อนรับเข้าสู่ระบบ NOT HAVE A BOOK SHOP
+      </p>
+
+      <!-- Details Container (Optional) -->
+      <div id="alertModalDetails" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; font-size:12.5px; color:#334155; margin-bottom:18px; text-align:left;">
+      </div>
+
+      <!-- Action Button -->
+      <button id="alertModalBtn" class="btn-primary-action" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 600; border-radius: 8px;">
+        ตกลง
+      </button>
+    </div>
+  </div>
+
+
+  <!-- MODAL 8: เพิ่มหนังสือเองด้วยตนเอง (Add Custom E-Book) -->
+  <div class="modal-overlay" id="addBookModal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('addBookModal')">✕</button>
+      <div class="modal-title">เพิ่มหนังสือเล่มใหม่</div>
+      <form id="addBookForm" onsubmit="handleAddCustomBook(event)">
+        <div class="form-group">
+          <label>ชื่อหนังสือ *</label>
+          <input type="text" id="newBookTitle" class="form-control" placeholder="เช่น มหาเวทย์ผนึกมาร เล่ม 20" required>
+        </div>
+        <div class="form-group">
+          <label>ชื่อผู้แต่ง / นักเขียน *</label>
+          <input type="text" id="newBookAuthor" class="form-control" placeholder="เช่น Gege Akutami" required>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>หมวดหมู่</label>
+            <select id="newBookCategory" class="form-control">
+              <option value="1">มังงะ</option>
+              <option value="2">หนังสือทั่วไป</option>
+              <option value="3">นิยาย - ทั่วไป</option>
+              <option value="4">อาร์ตบุ๊ค</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ราคาขาย (บาท) *</label>
+            <input type="number" step="0.01" min="0" id="newBookPrice" class="form-control" placeholder="152.00" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ราคาเต็มก่อนลด (บาท)</label>
+          <input type="number" step="0.01" min="0" id="newBookOrigPrice" class="form-control" placeholder="169.00">
+        </div>
+        <div class="form-group">
+          <label>ภาพหน้าปก (อัปโหลดไฟล์ PNG, JPG หรือ PDF)</label>
+          <input type="file" id="newBookCoverFile" class="form-control" accept="image/png,image/jpeg,image/webp,image/jpg,.pdf,application/pdf" style="padding:8px; font-size:13px; background:#f8fafc;">
+          <input type="url" id="newBookCover" class="form-control" placeholder="หรือวางลิงก์ URL รูปภาพ เช่น https://..." style="margin-top:6px;">
+        </div>
+        <div class="form-group">
+          <label>ไฟล์ E-Book (PDF)</label>
+          <input type="file" id="newBookPdf" class="form-control" accept=".pdf,application/pdf" style="padding:8px; font-size:13px; background:#f8fafc;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">อัปโหลดไฟล์ PDF สำหรับทดลองอ่านและดาวน์โหลด</div>
+        </div>
+        <div class="form-group">
+          <label>เรื่องย่อ / คำอธิบาย</label>
+          <textarea id="newBookDesc" class="form-control" rows="2" placeholder="เรื่องย่อโดยสังเขป..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>ตัวอย่างเนื้อหา (สำหรับทดลองอ่าน)</label>
+          <textarea id="newBookSample" class="form-control" rows="2" placeholder="ตัวอย่างเนื้อหาบทที่ 1..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary-action" style="background:#28a745;">
+          บันทึกหนังสือเข้าสู่ร้าน
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EMAIL SMTP CONFIGURATION -->
+  <div class="modal-overlay" id="emailConfigModal">
+    <div class="modal-box" style="max-width: 540px; padding: 24px;">
+      <button class="modal-close-btn" onclick="closeEmailConfigModal()">✕</button>
+      <div class="modal-title" style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+        <span style="font-size:22px;">✉️</span>
+        <span style="font-size:18px;">ตั้งค่าระบบส่งอีเมลจริงอัตโนมัติ (EmailJS)</span>
+      </div>
+
+      <!-- STATUS BANNER -->
+      <div id="emailConfigStatusBanner" style="padding:10px 14px; border-radius:6px; font-size:12.5px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
+        <span>🟢 สถานะ: <strong>เชื่อมต่อ EmailJS สำเร็จแล้ว!</strong> - พร้อมส่งใบเสร็จจริงเข้า Gmail อัตโนมัติ 100%</span>
+      </div>
+
+      <form onsubmit="handleSaveEmailConfig(event)">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Service ID *</label>
+            <input type="text" id="emailjsServiceId" class="form-control" required value="service_ljiywib" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Template ID *</label>
+            <input type="text" id="emailjsTemplateId" class="form-control" required value="template_nhy5wtl" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
+            EmailJS Public Key *
+          </label>
+          <input type="text" id="emailjsPublicKey" class="form-control" required value="uhFn5yZOqTEa_UIZZ" placeholder="เช่น p7X_abc123... (จากหน้า Account ของ EmailJS)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            * บัญชี EmailJS เชื่อมต่อกับ Gmail: <code>ratchapong.pi@rmuti.ac.th</code> เรียบร้อยแล้ว
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">
+            EmailJS Private Key (สำหรับโหมดความปลอดภัย Strict Mode)
+          </label>
+          <input type="password" id="emailjsPrivateKey" class="form-control" value="t6x_B-J-eSPLHhpzwO9Xn" placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)" style="padding:8px 10px; font-size:13px; font-family:inherit;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            💡 หากไม่อยากกรอก Private Key: ให้ไปที่แท็บ <strong>Security</strong> ใน EmailJS แล้ว<strong>เอาเครื่องหมายถูกออกจาก Use Private Key</strong> จากนั้นกด Save Changes ครับ
+          </div>
+        </div>
+
+        <!-- HOW TO GET PUBLIC KEY GUIDE -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:12px; color:#334155; line-height:1.6;">
+          <div style="font-weight:700; color:#0284c7; margin-bottom:4px;">📌 วิธีดู Keys จาก EmailJS ใน 10 วินาที:</div>
+          <ol style="margin:0; padding-left:18px;">
+            <li>ในหน้าเว็บ EmailJS ดูที่ <strong>เมนูแถบซ้ายล่าง</strong> คลิก <strong>"Account"</strong></li>
+            <li>ในแท็บ <strong>General</strong> จะพบ <strong>Public Key</strong> และ <strong>Private Key</strong></li>
+            <li>คัดลอกมาวางในช่องด้านบน แล้วกดบันทึกได้เลยครับ</li>
+          </ol>
+        </div>
+
+        <!-- TEST EMAIL SECTION -->
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:#0369a1; margin-bottom:6px;">🚀 ทดสอบส่งอีเมลจริงเข้า Inbox ของคุณทันที:</div>
+          <div style="display:flex; gap:8px;">
+            <input type="email" id="testEmailRecipient" class="form-control" placeholder="พิมพ์อีเมล เช่น ratchapong2000.ice@gmail.com" style="flex:1; padding:7px 10px; font-size:12.5px; font-family:inherit;">
+            <button type="button" id="btnTestEmailAction" onclick="testSendEmailSample()" class="btn-primary-action" style="background:#0284c7; padding:7px 14px; font-size:12.5px; font-weight:600; white-space:nowrap; width:auto;">
+              ทดสอบส่งเดี๋ยวนี้
+            </button>
+          </div>
+          <div id="testEmailFeedback" style="display:none; margin-top:8px; font-size:12px; padding:8px 10px; border-radius:4px;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeEmailConfigModal()" class="btn-primary-action" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; width:auto; font-weight:600;">
+            ปิด
+          </button>
+          <button type="submit" id="btnSaveEmailConfig" class="btn-primary-action" style="padding:8px 20px; width:auto; font-weight:700;">
+            บันทึกการตั้งค่า
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ส่งข้อความขออนุมัติบทบาท (Role Request Modal) -->
+  <div class="modal-overlay" id="roleRequestModal" style="z-index: 9999;">
+    <div class="modal-box" style="max-width: 480px; padding: 26px; border-radius: 14px;">
+      <button class="modal-close-btn" onclick="closeModal('roleRequestModal')">✕</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px; border-bottom:1px solid #e2e8f0; padding-bottom:14px;">
+        <div style="width:42px; height:42px; border-radius:10px; background:#ede9fe; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+          💬
+        </div>
+        <div>
+          <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f172a;">ส่งขอความอนุมัติ</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;">ส่งข้อความถึงผู้ดูแลระบบ (Admin) เพื่อขออนุมัติสิทธิ์</p>
+        </div>
+      </div>
+
+      <form id="roleRequestForm" onsubmit="handleSendRoleRequest(event)">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:12.5px; font-weight:600; color:#334155; margin-bottom:4px; display:block;">ผู้ส่งคำขอ (ชื่อ-นามสกุล) <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="reqSenderName" class="form-control" required placeholder="กรอกชื่อ-นามสกุลของคุณ" style="font-weight:600;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:12.5px; font-weight:600; color:#334155; margin-bottom:4px; display:block;">อีเมลติดต่อ <span style="color:#ef4444;">*</span></label>
+          <input type="email" id="reqSenderEmail" class="form-control" required placeholder="เช่น your_email@gmail.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:12.5px; font-weight:600; color:#334155; margin-bottom:4px; display:block;">สถานะ / บทบาทปัจจุบัน</label>
+          <input type="text" id="reqCurrentRole" class="form-control" readonly style="background:#f8fafc; color:#0284c7; font-weight:700;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:5px; display:block;">
+            ต้องการขออนุมัติเป็นบทบาทใด? <span style="color:#ef4444;">*</span>
+          </label>
+          <select id="reqTargetRole" class="form-control" style="font-weight:700; color:#6d28d9; border:1.5px solid #c4b5fd; background:#faf5ff; padding:9px 12px; cursor:pointer;" required>
+            <option value="3" selected>✍️ 3. writer (นักเขียน - ต้องการลงขาย E-Book)</option>
+            <option value="2">🛡️ 2. admin (ผู้ดูแลระบบ)</option>
+            <option value="1">👤 1. customer (ลูกค้าทั่วไป)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <label style="font-size:12.5px; font-weight:700; color:#0f172a; margin:0;">
+              ช่องพิมพ์ข้อความส่งหา Admin (พร้อมแท็ก @Admin) <span style="color:#ef4444;">*</span>
+            </label>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <button type="button" class="btn-tag-admin" onclick="insertAdminTagModal('@Admin ')" style="font-size:11px; padding:2px 7px;">@Admin</button>
+              <button type="button" class="btn-tag-admin" onclick="insertAdminTagModal('@Admin ขออนุมัติเป็นนักเขียน Writer ครับ')" style="font-size:11px; padding:2px 7px; background:#faf5ff;">+ ขอเป็น Writer</button>
+            </div>
+          </div>
+          <textarea id="reqMessage" class="form-control" rows="3" placeholder="เช่น '@Admin สวัสดีครับ ขออนุมัติบทบาท Writer เพื่อลงผลงาน E-Book ในร้านครับ'" required style="resize:vertical; font-family:inherit; padding:10px; font-size:13px;"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeModal('roleRequestModal')" class="btn-sm" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600;">
+            ยกเลิก
+          </button>
+          <button type="submit" class="btn-primary-action" style="padding:8px 20px; width:auto; font-weight:700; background:#7c3aed; border-radius:6px;">
+            📨 ส่งขอความอนุมัติ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script src="app.js?v=5"></script>
+</body>
+</html>
