@@ -1,4 +1,9 @@
 {
+  "name": "nothave-ebook-shop",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Static build ready'"
+  },
   "dependencies": {
     "nodemailer": "^10.0.13"
   }
