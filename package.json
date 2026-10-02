@@ -2,6 +2,7 @@
   "name": "nothave-ebook-shop",
   "version": "1.0.0",
   "scripts": {
+    "start": "node server.js",
     "build": "echo 'Static build ready'"
   },
   "dependencies": {

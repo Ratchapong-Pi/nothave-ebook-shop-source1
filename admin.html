@@ -3,6 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบบริหารจัดการหลังบ้าน (Admin CMS) | NOT HAVE A BOOK SHOP</title>
   <!-- Google Fonts: Barlow Condensed & Prompt & Sarabun -->
@@ -252,14 +255,26 @@
     /* KPI CARDS */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
     }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
       .kpi-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -643,43 +658,25 @@
             <div class="kpi-value" id="kpiBooks">กำลังโหลด...</div>
           </div>
         </div>
-      </div>
 
-      <!-- PROMOTION MANAGER (ADMIN CONTROLLER) -->
-      <div id="promotionControllerBox" style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:16px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:20px;">🏷️</span>
-            <div>
-              <strong style="color:#0f172a; font-size:14px;">จัดการแคมเปญโปรโมชันหน้าร้าน (Promotion &amp; Discount Controller)</strong>
-              <div style="font-size:11.5px; color:#64748b;">ตั้งค่าข้อความแถบโปรโมชันและส่วนลด โดยใส่รหัส Admin ยืนยันเพื่ออัปเดตหน้าเว็บทันที</div>
+        <!-- KPI: E-BOOK ขายดีที่สุด (อันดับ 1) -->
+        <div class="kpi-card" id="kpiTopSellerCard" style="border:1.5px solid #fde047; background:linear-gradient(135deg, #ffffff, #fefce8); grid-column:span 2;">
+          <div class="kpi-icon" style="background:#fef08a; color:#854d0e; font-weight:700; font-size:18px;">👑</div>
+          <div class="kpi-info" style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="kpi-title" style="color:#854d0e; font-weight:700; display:flex; align-items:center; gap:4px;">
+                <span>E-Book ขายดีที่สุด</span>
+                <span style="background:#ca8a04; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px;">อันดับ 1</span>
+              </div>
+              <span id="kpiTopBookUnits" style="font-size:11.5px; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #bbf7d0; padding:1px 8px; border-radius:10px;">0 เล่ม</span>
             </div>
-          </div>
-          <span id="currentPromoBadge" style="background:#eff6ff; color:#0284c7; border:1px solid #bfdbfe; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:12px;">
-            กำลังใช้งาน: <span id="currentPromoTextDisplay">โปรโมชันพิเศษ 3 วัน</span>
-          </span>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px 140px; gap:10px; align-items:flex-end;">
-          <div>
-            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ข้อความแถบโปรโมชันหน้าร้าน</label>
-            <input type="text" id="adminPromoText" class="form-control" style="padding:7px 10px; font-size:13px;" value="โปรโมชันพิเศษ 3 วัน" placeholder="เช่น โปรโมชันพิเศษ 3 วัน">
-          </div>
-          <div>
-            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ส่วนลดทั้งร้าน (%)</label>
-            <input type="number" id="adminPromoDiscount" class="form-control" style="padding:7px 10px; font-size:13px;" value="0" min="0" max="90" placeholder="0">
-          </div>
-          <div>
-            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสโปรโมชัน (Promo Code)</label>
-            <input type="text" id="adminPromoCode" class="form-control" style="padding:7px 10px; font-size:13px;" value="ADMINVIP" placeholder="ADMINVIP">
-          </div>
-          <div>
-            <label style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสผ่าน Admin</label>
-            <input type="password" id="adminPromoAuthPass" class="form-control" style="padding:7px 10px; font-size:13px;" placeholder="รหัสผ่าน">
-          </div>
-          <div>
-            <button type="button" class="btn-sm btn-primary" style="width:100%; padding:8px 12px; font-weight:700; height:35px;" onclick="saveAdminPromotionSettings()">
-              ⚡ อัปเดตหน้าเว็บ
-            </button>
+            <div class="kpi-value" id="kpiTopBookTitle" style="font-size:14px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">
+              -
+            </div>
+            <div style="font-size:11.5px; color:#64748b; display:flex; align-items:center; gap:6px; margin-top:1px;">
+              <span>ยอดขาย: <strong id="kpiTopBookRevenue" style="color:#0284c7; font-size:12.5px;">฿0.00</strong></span>
+              <span id="kpiTopBookCategory" style="color:#854d0e; font-weight:600;"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -719,6 +716,229 @@
 
       <!-- PANEL 1: OVERVIEW & PENDING ORDERS -->
       <div class="content-panel active" id="tabOverview">
+
+        <!-- 4 ANALYTICAL REPORTS (รายงานเชิงวิเคราะห์ฐานข้อมูล 4 ด้าน) -->
+        <div id="analyticalReportsSection" style="margin-bottom:25px;">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:22px;">📊</span>
+              <div>
+                <strong style="color:#0f172a; font-size:15.5px;">รายงานเชิงวิเคราะห์ฐานข้อมูล 4 ด้าน (Database
+                  Analytical Reports)</strong>
+                <div style="font-size:12px; color:#64748b;">สถิติและผลลัพธ์จากคำสั่ง SQL Queries
+                  สำหรับนำเสนอผู้บริหารและอาจารย์</div>
+              </div>
+            </div>
+            <span
+              style="background:#eff6ff; color:#0284c7; border:1px solid #bfdbfe; font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:12px;">
+              ⚡ คำนวณอัตโนมัติ Real-Time
+            </span>
+          </div>
+
+          <!-- GRID 2 COLUMNS FOR 4 REPORTS -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:18px;">
+
+            <!-- REPORT 1: SALES OVER TIME -->
+            <div
+              style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px;">📅</span>
+                  <div>
+                    <strong style="color:#0f172a; font-size:13.5px;">รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over
+                      Time)</strong>
+                    <div style="font-size:11px; color:#64748b;">วิเคราะห์รายได้ จำนวนออเดอร์ และยอดเฉลี่ยต่อบิล (AOV)
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn-sm"
+                  style="background:#f8fafc; color:#0284c7; border:1px solid #cbd5e1; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer;"
+                  onclick="toggleSqlBox('sqlBoxReport1')">
+                  🔍 ดู SQL
+                </button>
+              </div>
+              <div id="sqlBoxReport1"
+                style="display:none; background:#0f172a; color:#38bdf8; padding:10px 12px; border-radius:6px; font-size:11px; font-family:monospace; margin-bottom:12px; overflow-x:auto; line-height:1.4;">
+                <pre style="margin:0;">SELECT TO_CHAR(o.order_date, 'YYYY-MM') AS sale_month,
+       COUNT(o.order_id) AS total_orders,
+       SUM(o.total_amount) AS total_sales,
+       ROUND(AVG(o.total_amount), 2) AS average_order_value
+FROM orders o WHERE o.status = 'confirmed'
+GROUP BY TO_CHAR(o.order_date, 'YYYY-MM') ORDER BY sale_month ASC;</pre>
+              </div>
+              <div id="reportSalesOverTimeContainer" style="overflow-x:auto;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- REPORT 2: TOP 5 BEST-SELLING E-BOOKS -->
+            <div
+              style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px;">🏆</span>
+                  <div>
+                    <strong style="color:#0f172a; font-size:13.5px;">รายงานที่ 2: E-Book ขายดีที่สุด (Top Best-Selling
+                      E-Books - Pie Chart)</strong>
+                    <div style="font-size:11px; color:#64748b;">
+                      สถิติวิเคราะห์สัดส่วนและอันดับหนังสือแต่ละเล่มที่ขายดีที่สุด</div>
+                  </div>
+                </div>
+                <button type="button" class="btn-sm"
+                  style="background:#f8fafc; color:#0284c7; border:1px solid #cbd5e1; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer;"
+                  onclick="toggleSqlBox('sqlBoxReport2')">
+                  🔍 ดู SQL
+                </button>
+              </div>
+              <div id="sqlBoxReport2"
+                style="display:none; background:#0f172a; color:#38bdf8; padding:10px 12px; border-radius:6px; font-size:11px; font-family:monospace; margin-bottom:12px; overflow-x:auto; line-height:1.4;">
+                <pre style="margin:0;">SELECT e.ebook_id, e.title, c.category_name,
+       SUM(oi.quantity) AS total_units_sold,
+       SUM(oi.quantity * oi.price_at_purchase) AS total_revenue
+FROM ebooks e
+JOIN order_items oi ON e.ebook_id = oi.ebook_id
+JOIN orders o ON oi.order_id = o.order_id
+JOIN categories c ON e.category_id = c.category_id
+WHERE o.status = 'confirmed'
+GROUP BY e.ebook_id, e.title, c.category_name
+ORDER BY total_units_sold DESC, total_revenue DESC LIMIT 5;</pre>
+              </div>
+              <div id="reportTopEbooksContainer" style="overflow-x:auto;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- REPORT 3: SALES BY CATEGORY -->
+            <div
+              style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px;">📚</span>
+                  <div>
+                    <strong style="color:#0f172a; font-size:13.5px;">รายงานที่ 3: สัดส่วนยอดขายตามหมวดหมู่ (Sales by
+                      Category)</strong>
+                    <div style="font-size:11px; color:#64748b;">สถิติจำนวนเล่มและสัดส่วนรายได้แยกตามหมวดหมู่</div>
+                  </div>
+                </div>
+                <button type="button" class="btn-sm"
+                  style="background:#f8fafc; color:#0284c7; border:1px solid #cbd5e1; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer;"
+                  onclick="toggleSqlBox('sqlBoxReport3')">
+                  🔍 ดู SQL
+                </button>
+              </div>
+              <div id="sqlBoxReport3"
+                style="display:none; background:#0f172a; color:#38bdf8; padding:10px 12px; border-radius:6px; font-size:11px; font-family:monospace; margin-bottom:12px; overflow-x:auto; line-height:1.4;">
+                <pre style="margin:0;">SELECT c.category_id, c.category_name, COUNT(DISTINCT o.order_id) AS order_count,
+       SUM(oi.quantity) AS total_items_sold,
+       SUM(oi.quantity * oi.price_at_purchase) AS total_category_sales
+FROM categories c
+JOIN ebooks e ON c.category_id = e.category_id
+JOIN order_items oi ON e.ebook_id = oi.ebook_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'confirmed'
+GROUP BY c.category_id, c.category_name ORDER BY total_category_sales DESC;</pre>
+              </div>
+              <div id="categorySalesBarsContainer" style="display:flex; flex-direction:column; gap:10px;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- REPORT 4: CUSTOMER SPENDING & FREQUENCY -->
+            <div
+              style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px;">👥</span>
+                  <div>
+                    <strong style="color:#0f172a; font-size:13.5px;">รายงานที่ 4: พฤติกรรมลูกค้าและความถี่ในการซื้อ
+                      (Customer Spending &amp; Frequency)</strong>
+                    <div style="font-size:11px; color:#64748b;">วิเคราะห์ลูกค้าประจำที่มียอดสั่งซื้อสูงสุด (CLV)</div>
+                  </div>
+                </div>
+                <button type="button" class="btn-sm"
+                  style="background:#f8fafc; color:#0284c7; border:1px solid #cbd5e1; font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer;"
+                  onclick="toggleSqlBox('sqlBoxReport4')">
+                  🔍 ดู SQL
+                </button>
+              </div>
+              <div id="sqlBoxReport4"
+                style="display:none; background:#0f172a; color:#38bdf8; padding:10px 12px; border-radius:6px; font-size:11px; font-family:monospace; margin-bottom:12px; overflow-x:auto; line-height:1.4;">
+                <pre style="margin:0;">SELECT u.user_id, u.full_name, u.email,
+       COUNT(o.order_id) AS total_confirmed_orders,
+       SUM(o.total_amount) AS total_spent
+FROM users u
+JOIN orders o ON u.user_id = o.user_id
+WHERE o.status = 'confirmed'
+GROUP BY u.user_id, u.full_name, u.email
+HAVING COUNT(o.order_id) >= 1 ORDER BY total_spent DESC;</pre>
+              </div>
+              <div id="reportCustomerSpendingContainer" style="overflow-x:auto;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PROMOTION MANAGER (ADMIN CONTROLLER) -->
+        <div id="promotionControllerBox"
+          style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:16px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:20px;">🏷️</span>
+              <div>
+                <strong style="color:#0f172a; font-size:14px;">จัดการแคมเปญโปรโมชันหน้าร้าน (Promotion &amp; Discount
+                  Controller)</strong>
+                <div style="font-size:11.5px; color:#64748b;">ตั้งค่าข้อความแถบโปรโมชันและส่วนลด โดยใส่รหัส Admin
+                  ยืนยันเพื่ออัปเดตหน้าเว็บทันที</div>
+              </div>
+            </div>
+            <span id="currentPromoBadge"
+              style="background:#eff6ff; color:#0284c7; border:1px solid #bfdbfe; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:12px;">
+              กำลังใช้งาน: <span id="currentPromoTextDisplay">โปรโมชันพิเศษ 3 วัน</span>
+            </span>
+          </div>
+          <div
+            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px 140px; gap:10px; align-items:flex-end;">
+            <div>
+              <label
+                style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ข้อความแถบโปรโมชันหน้าร้าน</label>
+              <input type="text" id="adminPromoText" class="form-control" style="padding:7px 10px; font-size:13px;"
+                value="โปรโมชันพิเศษ 3 วัน" placeholder="เช่น โปรโมชันพิเศษ 3 วัน">
+            </div>
+            <div>
+              <label
+                style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">ส่วนลดทั้งร้าน
+                (%)</label>
+              <input type="number" id="adminPromoDiscount" class="form-control"
+                style="padding:7px 10px; font-size:13px;" value="0" min="0" max="90" placeholder="0">
+            </div>
+            <div>
+              <label
+                style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสโปรโมชัน
+                (Promo Code)</label>
+              <input type="text" id="adminPromoCode" class="form-control" style="padding:7px 10px; font-size:13px;"
+                value="ADMINVIP" placeholder="ADMINVIP">
+            </div>
+            <div>
+              <label
+                style="font-size:11.5px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">รหัสผ่าน
+                Admin</label>
+              <input type="password" id="adminPromoAuthPass" class="form-control"
+                style="padding:7px 10px; font-size:13px;" placeholder="รหัสผ่าน">
+            </div>
+            <div>
+              <button type="button" class="btn-sm btn-primary"
+                style="width:100%; padding:8px 12px; font-weight:700; height:35px;"
+                onclick="saveAdminPromotionSettings()">
+                ⚡ อัปเดตหน้าเว็บ
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- ROLE APPROVAL REQUEST ALERT BANNER -->
         <div id="overviewRoleReqAlert"
           style="display:none; background:linear-gradient(135deg, #ede9fe, #f5f3ff); border:1.5px solid #c4b5fd; border-radius:10px; padding:12px 18px; margin-bottom:18px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(124,58,237,0.08);">
@@ -742,25 +962,6 @@
           </button>
         </div>
 
-        <!-- CATEGORY SALES ANALYTICS (กราฟแท่งสถิติหมวดหมู่หนังสือที่คนซื้อมากที่สุด) -->
-        <div id="categorySalesAnalyticsBox" style="background:#ffffff; border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; margin-bottom:22px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:22px;">📊</span>
-              <div>
-                <strong style="color:#0f172a; font-size:14.5px;">หมวดหมู่หนังสือที่คนซื้อมากที่สุด (Top-Selling Book Categories)</strong>
-                <div style="font-size:12px; color:#64748b;">สถิติวิเคราะห์ยอดขายและจำนวนเล่มที่สั่งซื้อแยกตามหมวดหมู่ E-Book ในระบบ Real-Time</div>
-              </div>
-            </div>
-            <div id="topCategoryHighlightBadge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;">
-              <span>👑 ยอดนิยมอันดับ 1:</span> <span id="topCategoryNameText">กำลังคำนวณ...</span>
-            </div>
-          </div>
-          
-          <div id="categorySalesBarsContainer" style="display:flex; flex-direction:column; gap:12px;">
-            <div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">กำลังคำนวณสถิติยอดขายตามหมวดหมู่...</div>
-          </div>
-        </div>
       </div>
 
       <!-- PANEL 2: ORDERS MANAGEMENT -->
@@ -1095,7 +1296,8 @@
           </div>
         </div>
         <div style="margin-bottom:12px;">
-          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ภาพหน้าปก (อัปโหลดไฟล์ PNG, JPG หรือ PDF)</label>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">ภาพหน้าปก (อัปโหลดไฟล์ PNG,
+            JPG หรือ PDF)</label>
           <input type="file" id="mCoverFile" accept="image/png,image/jpeg,image/webp,image/jpg,.pdf,application/pdf"
             style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:12px; background:#f8fafc;">
           <div style="font-size:11px; color:#64748b; margin-top:4px; margin-bottom:4px;">
@@ -1141,7 +1343,8 @@
       <!-- STATUS BANNER -->
       <div id="emailConfigStatusBanner"
         style="padding:10px 14px; border-radius:6px; font-size:12.5px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
-        <span>🟢 สถานะ: <strong>เชื่อมต่อ EmailJS สำเร็จแล้ว!</strong> - พร้อมส่งใบเสร็จจริงเข้า Gmail อัตโนมัติ 100%</span>
+        <span>🟢 สถานะ: <strong>เชื่อมต่อ EmailJS สำเร็จแล้ว!</strong> - พร้อมส่งใบเสร็จจริงเข้า Gmail อัตโนมัติ
+          100%</span>
       </div>
 
       <form onsubmit="handleSaveEmailConfig(event)">
@@ -1178,7 +1381,8 @@
             placeholder="เช่น i0yc... (จากแท็บ General ในหน้า Account)"
             style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; font-size:13px;">
           <div style="font-size:11px; color:#64748b; margin-top:4px;">
-            💡 หากไม่อยากกรอก Private Key: ให้ไปที่แท็บ <strong>Security</strong> ใน EmailJS แล้ว<strong>เอาเครื่องหมายถูกออกจาก Use Private Key</strong> จากนั้นกด Save Changes ครับ
+            💡 หากไม่อยากกรอก Private Key: ให้ไปที่แท็บ <strong>Security</strong> ใน EmailJS
+            แล้ว<strong>เอาเครื่องหมายถูกออกจาก Use Private Key</strong> จากนั้นกด Save Changes ครับ
           </div>
         </div>
 
@@ -1251,9 +1455,9 @@
                 localStorage.setItem(k, JSON.stringify(cleaned));
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         });
-      } catch (ge) {}
+      } catch (ge) { }
     })();
 
     // Supabase Global Realtime Broadcast Channel & Postgres Changes across ALL devices
@@ -1309,7 +1513,7 @@
                   list.unshift(msg.payload);
                   localStorage.setItem("nothave_community_messages", JSON.stringify(list.slice(0, 100)));
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
             if (typeof renderAdminCommunityMessages === 'function') renderAdminCommunityMessages();
             if (typeof renderRoleRequests === 'function') renderRoleRequests();
@@ -1322,7 +1526,7 @@
                   reqs.unshift(msg.payload);
                   localStorage.setItem("nothave_role_requests", JSON.stringify(reqs));
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
             if (typeof renderRoleRequests === 'function') renderRoleRequests();
             if (typeof renderAdminCommunityMessages === 'function') renderAdminCommunityMessages();
@@ -1685,13 +1889,253 @@
 
       updateSelectedOrdersUI();
       updateSelectedPendingUI();
-      renderCategorySalesAnalytics();
+      renderAllAnalyticalReports();
     }
 
-    function renderCategorySalesAnalytics() {
+    function toggleSqlBox(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
+    }
+
+    function renderAllAnalyticalReports() {
+      renderReport1_SalesOverTime();
+      renderReport2_TopEbooks();
+      renderReport3_SalesByCategory();
+      renderReport4_CustomerSpending();
+    }
+
+    // 1. รายงานที่ 1: ยอดขายตามช่วงเวลา (Sales Over Time)
+    function renderReport1_SalesOverTime() {
+      const container = document.getElementById("reportSalesOverTimeContainer");
+      if (!container) return;
+      const confirmedOrders = adminOrders.filter(o => o.status === "confirmed");
+
+      if (confirmedOrders.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:12px;">ยังไม่มีคำสั่งซื้อที่ได้รับการอนุมัติ (Confirmed)</div>`;
+        return;
+      }
+
+      const monthlyMap = {};
+      confirmedOrders.forEach(o => {
+        const monthKey = (o.date && o.date.length >= 7) ? o.date.substring(0, 7) : "ปัจจุบัน";
+        if (!monthlyMap[monthKey]) {
+          monthlyMap[monthKey] = { month: monthKey, orders: 0, sales: 0 };
+        }
+        monthlyMap[monthKey].orders += 1;
+        monthlyMap[monthKey].sales += (o.amount || 0);
+      });
+
+      const list = Object.values(monthlyMap).sort((a, b) => b.month.localeCompare(a.month));
+
+      container.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
+              <th style="padding:6px 8px;">ช่วงเวลา (YYYY-MM)</th>
+              <th style="padding:6px 8px; text-align:center;">จำนวนออเดอร์</th>
+              <th style="padding:6px 8px; text-align:right;">ยอดขายรวม</th>
+              <th style="padding:6px 8px; text-align:right;">เฉลี่ย/ออเดอร์ (AOV)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(r => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:7px 8px; font-weight:600; color:#0f172a;">📅 ${escapeHTML(r.month)}</td>
+                <td style="padding:7px 8px; text-align:center;"><span style="background:#f1f5f9; padding:2px 8px; border-radius:10px; font-weight:600;">${r.orders} ออเดอร์</span></td>
+                <td style="padding:7px 8px; text-align:right; font-weight:700; color:#059669;">฿${r.sales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="padding:7px 8px; text-align:right; color:#0284c7; font-weight:600;">฿${(r.sales / Math.max(1, r.orders)).toFixed(2)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // 2. รายงานที่ 2: E-Book ขายดีที่สุด (Top 5 Best-Selling E-Books) - จัดอันดับรายเล่ม พร้อม Pie/Donut Chart
+    function renderReport2_TopEbooks() {
+      const container = document.getElementById("reportTopEbooksContainer");
+      if (!container) return;
+      const confirmedOrders = adminOrders.filter(o => o.status === "confirmed");
+
+      const bookStats = {};
+      const fallbackTitles = {
+        3: "SMC",
+        5: "เล่นหุ้นง่ายๆสไตล์ผม",
+        9: "คู่มือฝึกจิตและสมาธิก่อนเทรด",
+        12: "คู่มือการลงทุน E-Book"
+      };
+
+      confirmedOrders.forEach(o => {
+        const items = o.items || [];
+        if (items.length > 0) {
+          items.forEach(it => {
+            const bId = it.ebook_id || (it.ebooks && it.ebooks.ebook_id) || 0;
+            let title = (it.ebooks && typeof it.ebooks === 'object') ? it.ebooks.title : null;
+            if (!title && typeof inventoryBooks !== 'undefined' && Array.isArray(inventoryBooks)) {
+              const found = inventoryBooks.find(b => b.id === bId);
+              if (found) title = found.title;
+            }
+            if (!title) title = fallbackTitles[bId] || `หนังสือ E-Book (เล่มที่ #${bId})`;
+
+            let catName = (it.ebooks && it.ebooks.categories) ? it.ebooks.categories.category_name : null;
+            if (!catName && it.ebooks && it.ebooks.category_id) {
+              const catMap = { 1: "มังงะ", 2: "หนังสือทั่วไป", 3: "นิยาย - ทั่วไป" };
+              catName = catMap[it.ebooks.category_id];
+            }
+            if (!catName && typeof inventoryBooks !== 'undefined' && Array.isArray(inventoryBooks)) {
+              const found = inventoryBooks.find(b => b.id === bId);
+              if (found) catName = found.cat;
+            }
+            if (!catName) catName = "หนังสือทั่วไป";
+
+            const qty = parseInt(it.quantity) || 1;
+            const price = parseFloat(it.price_at_purchase) || (parseFloat(o.amount) / Math.max(1, items.length)) || 0;
+            const rev = price * qty;
+
+            if (!bookStats[bId]) {
+              bookStats[bId] = { id: bId, title: title, category: catName, units: 0, revenue: 0 };
+            }
+            bookStats[bId].units += qty;
+            bookStats[bId].revenue += rev;
+          });
+        } else if (o.amount > 0) {
+          const bId = 5;
+          const title = fallbackTitles[bId] || "เล่นหุ้นง่ายๆสไตล์ผม";
+          if (!bookStats[bId]) {
+            bookStats[bId] = { id: bId, title: title, category: "หนังสือทั่วไป", units: 0, revenue: 0 };
+          }
+          bookStats[bId].units += 1;
+          bookStats[bId].revenue += o.amount;
+        }
+      });
+
+      const topBooks = Object.values(bookStats).sort((a, b) => b.units - a.units || b.revenue - a.revenue).slice(0, 5);
+
+      const topBook1 = topBooks[0];
+      const kpiTitleEl = document.getElementById("kpiTopBookTitle");
+      const kpiUnitsEl = document.getElementById("kpiTopBookUnits");
+      const kpiRevEl2 = document.getElementById("kpiTopBookRevenue");
+      const kpiCatEl = document.getElementById("kpiTopBookCategory");
+
+      if (topBook1 && topBook1.units > 0) {
+        if (kpiTitleEl) kpiTitleEl.innerText = topBook1.title;
+        if (kpiUnitsEl) kpiUnitsEl.innerText = `${topBook1.units} เล่ม`;
+        if (kpiRevEl2) kpiRevEl2.innerText = `฿${topBook1.revenue.toFixed(2)}`;
+        if (kpiCatEl) kpiCatEl.innerText = `(หมวด: ${topBook1.category})`;
+      } else {
+        if (kpiTitleEl) kpiTitleEl.innerText = "ยังไม่มีข้อมูลการขาย";
+        if (kpiUnitsEl) kpiUnitsEl.innerText = "0 เล่ม";
+        if (kpiRevEl2) kpiRevEl2.innerText = "฿0.00";
+        if (kpiCatEl) kpiCatEl.innerText = "";
+      }
+
+      if (topBooks.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:12px;">ยังไม่มีข้อมูลการขายหนังสือที่ยืนยันแล้ว</div>`;
+        return;
+      }
+
+      const totalSoldAll = topBooks.reduce((sum, b) => sum + b.units, 0);
+      const totalRevAll = topBooks.reduce((sum, b) => sum + b.revenue, 0);
+
+      const chartColors = ["#0284c7", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#6366f1"];
+      const radius = 38;
+      const circumference = 2 * Math.PI * radius;
+      let accumulatedOffset = 0;
+
+      const svgSlices = topBooks.map((b, idx) => {
+        const color = chartColors[idx % chartColors.length];
+        const fraction = totalSoldAll > 0 ? (b.units / totalSoldAll) : 0;
+        const strokeLength = fraction * circumference;
+        const currentOffset = accumulatedOffset;
+        accumulatedOffset += strokeLength;
+
+        return `<circle cx="50" cy="50" r="${radius}" fill="transparent" stroke="${color}" stroke-width="15" 
+          stroke-dasharray="${strokeLength} ${circumference}" 
+          stroke-dashoffset="-${currentOffset}" 
+          style="transition: all 0.5s ease; cursor:pointer;" title="${escapeQuote(b.title)}: ${b.units} เล่ม (${(fraction * 100).toFixed(1)}%)">
+        </circle>`;
+      }).join("");
+
+      const medalIcons = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+      container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          
+          <!-- PIE CHART & PROPORTION SUMMARY BOX -->
+          <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:16px; padding:14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+            
+            <!-- DONUT PIE CHART -->
+            <div style="position:relative; width:130px; height:130px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="130" height="130" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
+                <circle cx="50" cy="50" r="${radius}" fill="transparent" stroke="#f1f5f9" stroke-width="15"></circle>
+                ${svgSlices}
+              </svg>
+              <div style="position:absolute; text-align:center; pointer-events:none;">
+                <div style="font-size:10px; color:#64748b; font-weight:600;">ขายแล้วรวม</div>
+                <div style="font-size:15px; font-weight:800; color:#0f172a;">${totalSoldAll} เล่ม</div>
+                <div style="font-size:10.5px; font-weight:700; color:#059669;">฿${totalRevAll.toFixed(2)}</div>
+              </div>
+            </div>
+
+            <!-- BOOK SHARE LEGEND -->
+            <div style="flex:1; min-width:200px; display:flex; flex-direction:column; gap:6px;">
+              ${topBooks.map((b, idx) => {
+        const color = chartColors[idx % chartColors.length];
+        const pct = totalSoldAll > 0 ? ((b.units / totalSoldAll) * 100).toFixed(1) : 0;
+        return `
+                  <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; background:#ffffff; padding:5px 8px; border-radius:6px; border:1px solid #f1f5f9;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                      <span style="width:10px; height:10px; border-radius:50%; background:${color}; flex-shrink:0;"></span>
+                      <strong style="color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHTML(b.title)}">
+                        ${escapeHTML(b.title)}
+                      </strong>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:8px;">
+                      <span style="background:#eff6ff; color:#0284c7; font-weight:700; padding:1px 5px; border-radius:4px; font-size:10.5px;">${pct}%</span>
+                      <span style="color:#475569; font-weight:600;">${b.units} เล่ม</span>
+                      <span style="color:#059669; font-weight:700;">฿${b.revenue.toFixed(2)}</span>
+                    </div>
+                  </div>
+                `;
+      }).join("")}
+            </div>
+
+          </div>
+
+          <!-- DETAILED TOP RANKING TABLE -->
+          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
+                <th style="padding:6px 8px; width:30px;">อันดับ</th>
+                <th style="padding:6px 8px;">ชื่อหนังสือ E-Book</th>
+                <th style="padding:6px 8px;">หมวดหมู่</th>
+                <th style="padding:6px 8px; text-align:center;">ยอดขาย</th>
+                <th style="padding:6px 8px; text-align:right;">รายได้รวม</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topBooks.map((b, idx) => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:7px 8px; font-size:14px; text-align:center;">${medalIcons[idx] || (idx + 1)}</td>
+                  <td style="padding:7px 8px; font-weight:600; color:#0f172a; max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHTML(b.title)}">
+                    ${escapeHTML(b.title)}
+                  </td>
+                  <td style="padding:7px 8px; color:#64748b;"><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:11px;">${escapeHTML(b.category)}</span></td>
+                  <td style="padding:7px 8px; text-align:center; font-weight:700; color:#0284c7;">${b.units} เล่ม</td>
+                  <td style="padding:7px 8px; text-align:right; font-weight:700; color:#059669;">฿${b.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+        </div>
+      `;
+    }
+
+    // 3. รายงานที่ 3: สัดส่วนยอดขายตามหมวดหมู่ (Sales by Category)
+    function renderReport3_SalesByCategory() {
       const container = document.getElementById("categorySalesBarsContainer");
-      const highlightEl = document.getElementById("topCategoryHighlightBadge");
-      const highlightText = document.getElementById("topCategoryNameText");
       if (!container) return;
 
       const categoryMeta = {
@@ -1702,7 +2146,6 @@
 
       const stats = {};
       let totalUnitsSold = 0;
-      let totalCategoryRevenue = 0;
 
       for (const [id, meta] of Object.entries(categoryMeta)) {
         stats[id] = {
@@ -1710,12 +2153,13 @@
           name: meta.name,
           icon: meta.icon,
           color: meta.color,
+          orderIds: new Set(),
           count: 0,
           revenue: 0
         };
       }
 
-      adminOrders.forEach(ord => {
+      adminOrders.filter(o => o.status === "confirmed").forEach(ord => {
         const items = ord.items || [];
         if (items.length > 0) {
           items.forEach(it => {
@@ -1731,44 +2175,28 @@
                 name: catName,
                 icon: "📘",
                 color: "linear-gradient(90deg, #64748b, #94a3b8)",
+                orderIds: new Set(),
                 count: 0,
                 revenue: 0
               };
             }
+            stats[catId].orderIds.add(ord.id);
             stats[catId].count += qty;
             stats[catId].revenue += rev;
             totalUnitsSold += qty;
-            totalCategoryRevenue += rev;
           });
         } else if (ord.amount > 0) {
+          stats[2].orderIds.add(ord.id);
           stats[2].count += 1;
           stats[2].revenue += ord.amount;
           totalUnitsSold += 1;
-          totalCategoryRevenue += ord.amount;
         }
       });
 
       const sorted = Object.values(stats).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-      const topCat = sorted[0];
-
-      if (highlightText && highlightEl) {
-        if (totalUnitsSold > 0 && topCat && topCat.count > 0) {
-          highlightText.innerText = `${topCat.icon} ${topCat.name} (${topCat.count} เล่ม)`;
-          highlightEl.style.display = "inline-flex";
-        } else {
-          highlightText.innerText = "ยังไม่มีข้อมูลการซื้อ";
-          highlightEl.style.display = "inline-flex";
-        }
-      }
 
       if (totalUnitsSold === 0) {
-        container.innerHTML = `
-          <div style="text-align:center; padding:24px 10px; color:#64748b; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
-            <div style="font-size:24px; margin-bottom:6px;">📊</div>
-            <div style="font-weight:600; color:#1e293b; font-size:13.5px; margin-bottom:4px;">ยังไม่มีข้อมูลคำสั่งซื้อสำหรับนำมาคำนวณสถิติ</div>
-            <div style="font-size:12px; color:#64748b;">เมื่อลูกค้าสั่งซื้อหนังสือในระบบ กราฟแท่งจะคำนวณและแสดงผลหมวดหมู่ที่มียอดสั่งซื้อสูงสุดแบบ Real-time ทันที</div>
-          </div>
-        `;
+        container.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:12px;">ยังไม่มีข้อมูลยอดขายหมวดหมู่ที่ยืนยันแล้ว</div>`;
         return;
       }
 
@@ -1776,34 +2204,85 @@
 
       container.innerHTML = sorted.map((cat, idx) => {
         const percentage = totalUnitsSold > 0 ? ((cat.count / totalUnitsSold) * 100).toFixed(1) : 0;
-        const barWidth = totalUnitsSold > 0 ? Math.max(cat.count > 0 ? (cat.count / maxCount) * 100 : 0, 3) : 0;
+        const barWidth = totalUnitsSold > 0 ? Math.max(cat.count > 0 ? (cat.count / maxCount) * 100 : 0, 4) : 0;
         const isTop = idx === 0 && cat.count > 0;
 
         return `
-          <div style="background:#ffffff; border:1px solid ${isTop ? '#bae6fd' : '#f1f5f9'}; padding:12px 14px; border-radius:8px; box-shadow:${isTop ? '0 2px 8px rgba(2,132,199,0.08)' : 'none'};">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:16px;">${cat.icon}</span>
-                <strong style="color:#0f172a; font-size:13.5px;">${cat.name}</strong>
-                ${isTop ? '<span style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px;">👑 ซื้อมากที่สุด อันดับ 1</span>' : ''}
+          <div style="background:#ffffff; border:1px solid ${isTop ? '#bae6fd' : '#f1f5f9'}; padding:10px 12px; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span>${cat.icon}</span>
+                <strong style="color:#0f172a; font-size:12.5px;">${cat.name}</strong>
+                ${isTop ? '<span style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px;">👑 อันดับ 1</span>' : ''}
               </div>
-              <div style="display:flex; align-items:center; gap:12px; font-size:12.5px;">
-                <span style="color:#475569;">
-                  ยอดซื้อ: <strong style="color:${isTop ? '#0284c7' : '#0f172a'}; font-size:13.5px;">${cat.count} เล่ม</strong>
-                  <span style="color:#64748b; font-size:11.5px;">(${percentage}%)</span>
-                </span>
-                <span style="color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">
+              <div style="display:flex; align-items:center; gap:8px; font-size:11.5px;">
+                <span style="color:#475569;">${cat.orderIds.size} ออเดอร์ | <strong>${cat.count} เล่ม</strong> (${percentage}%)</span>
+                <span style="color:#059669; font-weight:700; background:#ecfdf5; padding:1px 6px; border-radius:4px;">
                   ฿${cat.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
-            
-            <div style="width:100%; height:14px; background:#f1f5f9; border-radius:8px; overflow:hidden; position:relative; display:flex;">
-              <div style="width:${cat.count > 0 ? barWidth : 0}%; height:100%; background:${cat.color}; border-radius:8px; transition:width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div style="width:100%; height:10px; background:#f1f5f9; border-radius:6px; overflow:hidden;">
+              <div style="width:${cat.count > 0 ? barWidth : 0}%; height:100%; background:${cat.color}; border-radius:6px;"></div>
             </div>
           </div>
         `;
       }).join("");
+    }
+
+    // 4. รายงานที่ 4: พฤติกรรมลูกค้าและความถี่ในการซื้อ (Customer Spending & Frequency)
+    function renderReport4_CustomerSpending() {
+      const container = document.getElementById("reportCustomerSpendingContainer");
+      if (!container) return;
+      const confirmedOrders = adminOrders.filter(o => o.status === "confirmed");
+
+      const userMap = {};
+      confirmedOrders.forEach(o => {
+        const uKey = o.email || o.customer || "ลูกค้าทั่วไป";
+        if (!userMap[uKey]) {
+          userMap[uKey] = {
+            id: o.userId || 0,
+            name: o.customer || "ลูกค้าทั่วไป",
+            email: o.email || "-",
+            ordersCount: 0,
+            totalSpent: 0
+          };
+        }
+        userMap[uKey].ordersCount += 1;
+        userMap[uKey].totalSpent += (o.amount || 0);
+      });
+
+      const customerList = Object.values(userMap).sort((a, b) => b.totalSpent - a.totalSpent);
+
+      if (customerList.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:12px;">ยังไม่มีประวัติการซื้อของลูกค้า</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569;">
+              <th style="padding:6px 8px;">ลูกค้า / ผู้สั่งซื้อ</th>
+              <th style="padding:6px 8px;">อีเมล</th>
+              <th style="padding:6px 8px; text-align:center;">ซื้อสำเร็จ</th>
+              <th style="padding:6px 8px; text-align:right;">ยอดซื้อสะสม</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${customerList.map((c, idx) => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:7px 8px; font-weight:600; color:#0f172a;">
+                  ${idx === 0 ? '👑 ' : ''}${escapeHTML(c.name)}
+                </td>
+                <td style="padding:7px 8px; color:#64748b; font-size:11px;">${escapeHTML(c.email)}</td>
+                <td style="padding:7px 8px; text-align:center;"><span style="background:#eff6ff; color:#0284c7; padding:2px 8px; border-radius:10px; font-weight:700;">${c.ordersCount} ครั้ง</span></td>
+                <td style="padding:7px 8px; text-align:right; font-weight:700; color:#059669;">฿${c.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
     }
 
     async function approveOrder(id) {
@@ -2262,6 +2741,7 @@
       }).join("");
 
       updateSelectedBooksUI();
+      renderAllAnalyticalReports();
     }
 
     // ========================================================
@@ -2302,7 +2782,7 @@
         }
         try {
           localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
-        } catch (e) {}
+        } catch (e) { }
 
         // 3. บันทึกประวัติกิจกรรมระบบ (Audit Log)
         logAdminActivity("อนุมัติหนังสือ", `แอดมินอนุมัติหนังสือ "${title}" ของนักเขียน (${writerName}) วางจำหน่ายบนหน้าร้านค้าเรียบร้อย`);
@@ -2360,7 +2840,7 @@
         }
         try {
           localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
-        } catch (e) {}
+        } catch (e) { }
 
         logAdminActivity("ปฏิเสธหนังสือ", `แอดมินปฏิเสธหนังสือ "${title}" (เหตุผล: ${reason})`);
         alert(`ปฏิเสธหนังสือ "${title}" เรียบร้อยแล้ว (หนังสือจะไม่ถูกนำขึ้นแสดงบนหน้าเว็ป)`);
@@ -2399,7 +2879,7 @@
           let pendingList = JSON.parse(localStorage.getItem("nothave_pending_writer_books") || "[]");
           pendingList = pendingList.filter(p => p.ebook_id !== id && p.title !== title);
           localStorage.setItem("nothave_pending_writer_books", JSON.stringify(pendingList.slice(-20)));
-        } catch (e) {}
+        } catch (e) { }
 
         logAdminActivity("ลบหนังสือ", `ลบหนังสือ "${title}" (ID: ${id})`);
         broadcastAdminRealtime('book_update');
@@ -2872,7 +3352,7 @@
         // นักเขียน: บันทึกสถานะ is_active: false เพื่อรอให้ Admin อนุมัติก่อนลงหน้าเว็ป
         const isActive = !isWriter;
         const authorNameClean = author || (user ? user.full_name : "นักเขียน");
-        
+
         let targetAuthorId = null;
         if (authorNameClean) {
           try {
@@ -2910,7 +3390,7 @@
                 targetAuthorId = fallbackAuth[0].author_id;
               }
             }
-          } catch (fErr) {}
+          } catch (fErr) { }
         }
 
         const writerTag = `\n[WRITER_SUBMISSION: user_id=${user ? user.id : 0}|writer_name=${authorNameClean}|status=${isActive ? 'approved' : 'pending'}]`;
@@ -2974,7 +3454,7 @@
               }));
               try {
                 localStorage.setItem("nothave_pending_writer_books", JSON.stringify(compactList));
-              } catch (e) {}
+              } catch (e) { }
             }
           } catch (storageErr) {
             console.warn("Storage pending list note:", storageErr);
@@ -2996,7 +3476,7 @@
             });
             try {
               localStorage.setItem("nothave_community_messages", JSON.stringify(commMsgs.slice(-30)));
-            } catch (qE) {}
+            } catch (qE) { }
           } catch (commErr) {
             console.warn("Comm notify err:", commErr);
           }
@@ -3792,7 +4272,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payloadData)
         });
-      } catch (e) {}
+      } catch (e) { }
 
       alert("✓ บันทึกการตั้งค่า EmailJS เรียบร้อยแล้ว!\nระบบพร้อมส่งอีเมลใบเสร็จจริงไปยังลูกค้าอัตโนมัติทันที");
       logAdminActivity("ตั้งค่าอีเมล", `อัปเดต EmailJS Service ${serviceId}`);
@@ -3851,7 +4331,7 @@
             finalMsg = result.message;
           }
         }
-      } catch (err) {}
+      } catch (err) { }
 
       // 2. Direct Client-side EmailJS API Fallback (ยิงส่งตรงสู่ EmailJS Cloud)
       if (!isSuccess) {
@@ -4050,11 +4530,11 @@
       };
 
       localStorage.setItem("nothave_active_promotion", JSON.stringify(promoData));
-      
+
       try {
         const promoBroadcast = new BroadcastChannel("nothave_promo_channel");
         promoBroadcast.postMessage({ type: "PROMO_UPDATED", data: promoData });
-      } catch (e) {}
+      } catch (e) { }
 
       if (globalAdminRealtimeChannel) {
         try {
